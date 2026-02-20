@@ -1,4 +1,6 @@
-# GLYPH — Open Icon Library
+# GLYPH — Open Icon Library 
+
+https://glyph-one.vercel.app/
 
 A curated library of 80+ crisp SVG icons with an AI generator powered by Claude.  
 Visitors can browse, copy, and generate new icons — **no sign-up, no API key needed on their end.**
