@@ -1,0 +1,10 @@
+{
+  "name": "glyph",
+  "version": "1.0.0",
+  "description": "Open Icon Library with AI Generator",
+  "main": "api/generate.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT"
+}
