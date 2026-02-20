@@ -1410,41 +1410,59 @@
       { id: 'tool', name: 'Tool', category: 'objects', tags: ['wrench', 'repair', 'fix'], path: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z' },
     ];
 
+
+
     // ===================== STATE =====================
     let currentCategory = 'all';
     let currentSearch = '';
     let selectedIcon = null;
     let currentTab = 'svg';
-    let aiIcons = [];
+    let allIcons = [...BASE_ICONS]; // Start with base icons as fallback
     let pendingIcon = null;
 
-    // ===================== STORAGE =====================
-    async function loadAiIcons() {
+    // ===================== API =====================
+    async function loadIcons() {
       try {
-        const r = await window.storage.get('glyph-ai-icons', true);
-        if (r && r.value) { aiIcons = JSON.parse(r.value); updateStats(); }
-      } catch (e) { aiIcons = []; }
-    }
-    async function saveAiIcons() {
-      try { await window.storage.set('glyph-ai-icons', JSON.stringify(aiIcons), true); } catch (e) { }
+        const resp = await fetch('/api/icons');
+        if (!resp.ok) throw new Error('API not available');
+        const data = await resp.json();
+        if (data.icons && data.icons.length > 0) {
+          allIcons = data.icons; // Replace with server data if available
+        }
+      } catch (e) {
+        console.warn('Could not fetch shared library (this is normal if opening as local file). Using base icons.');
+      }
+      updateStats();
+      renderGrid();
     }
 
+
     function findIcon(id) {
-      return BASE_ICONS.find(i => i.id === id) || aiIcons.find(i => i.id === id);
+      return allIcons.find(i => i.id === id);
     }
 
     function getDisplayIcons() {
-      let pool = currentCategory === 'generated' ? aiIcons
-        : currentCategory === 'all' ? [...BASE_ICONS, ...aiIcons]
-          : [...BASE_ICONS.filter(i => i.category === currentCategory), ...aiIcons.filter(i => i.category === currentCategory)];
+      const isAIFilter = currentCategory === 'generated';
+      let pool = isAIFilter
+        ? allIcons.filter(i => i.generated)
+        : currentCategory === 'all'
+          ? allIcons
+          : allIcons.filter(i => i.category === currentCategory);
+
       const q = currentSearch.toLowerCase();
       if (!q) return pool;
-      return pool.filter(i => i.name.toLowerCase().includes(q) || i.id.includes(q) || (i.tags || []).some(t => t.includes(q)) || i.category.includes(q));
+      return pool.filter(i =>
+        i.name.toLowerCase().includes(q) ||
+        i.id.toLowerCase().includes(q) ||
+        (i.tags || []).some(t => t.toLowerCase().includes(q))
+      );
     }
 
     function updateStats() {
-      document.getElementById('ai-count').textContent = aiIcons.length;
-      document.getElementById('total-count').textContent = BASE_ICONS.length + aiIcons.length;
+      const generated = allIcons.filter(i => i.generated).length;
+      const total = allIcons.length;
+      document.getElementById('ai-count').textContent = generated;
+      document.getElementById('total-count').textContent = total;
     }
 
     // ===================== RENDER =====================
@@ -1472,7 +1490,7 @@
       }
       nr.style.display = 'none';
 
-      // Base icons first, then AI
+      // Base icons first, then AI (or reverse if desired, here we maintain the existing feel)
       const sorted = [...filtered].sort((a, b) => (a.generated ? 1 : 0) - (b.generated ? 1 : 0));
       grid.innerHTML = sorted.map((ic, i) => `
     <div class="icon-card${ic.generated ? ' ai-gen' : ''}" onclick="openModal('${ic.id}')" style="animation-delay:${Math.min(i, 40) * 14}ms">
@@ -1486,12 +1504,24 @@
     // ===================== FILTER =====================
     function setCategory(cat, btn) {
       currentCategory = cat;
-      document.querySelectorAll('.filter-tab').forEach(b => { b.classList.remove('active'); b.style.background = ''; b.style.borderColor = ''; b.style.color = ''; });
+      document.querySelectorAll('.filter-tab').forEach(b => {
+        b.classList.remove('active');
+        b.style.background = '';
+        b.style.borderColor = '';
+        b.style.color = '';
+      });
       btn.classList.add('active');
-      if (cat === 'generated') { btn.style.background = 'var(--gen)'; btn.style.borderColor = 'var(--gen)'; btn.style.color = '#000'; }
+      if (cat === 'generated') {
+        btn.style.background = 'var(--gen)';
+        btn.style.borderColor = 'var(--gen)';
+        btn.style.color = '#000';
+      }
       renderGrid();
     }
-    function filterIcons() { currentSearch = document.getElementById('search').value; renderGrid(); }
+    function filterIcons() {
+      currentSearch = document.getElementById('search').value;
+      renderGrid();
+    }
 
     // ===================== DETAIL MODAL =====================
     function openModal(id) {
@@ -1509,7 +1539,12 @@
       if (e && e.target !== document.getElementById('modal-overlay') && !e.target.classList.contains('modal-close')) return;
       document.getElementById('modal-overlay').classList.remove('open'); selectedIcon = null;
     }
-    function switchTab(tab, btn) { currentTab = tab; document.querySelectorAll('.modal-tab').forEach(b => b.classList.remove('active')); btn.classList.add('active'); updateCode(); }
+    function switchTab(tab, btn) {
+      currentTab = tab;
+      document.querySelectorAll('.modal-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      updateCode();
+    }
     function updateCode() {
       const ic = selectedIcon; if (!ic) return;
       const el = document.getElementById('modal-code');
@@ -1554,11 +1589,6 @@
       pendingIcon = null;
     }
 
-
-    // ===================== AI GENERATION (via serverless proxy) =====================
-    // The Anthropic API key lives ONLY in Vercel's environment variables.
-    // This HTML never touches the key — it calls /api/generate on your own server.
-
     async function generateIcon() {
       const name = document.getElementById('gen-name').value.trim();
       if (!name) { document.getElementById('gen-name').focus(); return; }
@@ -1569,7 +1599,6 @@
 
       if (findIcon(slug)) { showToast(`"${name}" already exists in the library!`); return; }
 
-      // UI: enter loading state
       document.getElementById('gen-submit-btn').style.display = 'none';
       document.getElementById('gen-add-btn').style.display = 'none';
       document.getElementById('gen-retry-btn').style.display = 'none';
@@ -1607,7 +1636,6 @@
         document.getElementById('gen-tags').innerHTML =
           (icon.tags || []).map(t => `<span class="gen-tag-pill">${t}</span>`).join('');
 
-        // Multi-size swatch
         document.getElementById('gen-sizes').innerHTML =
           [16, 20, 28].map(s =>
             `<div class="sz-box" style="width:${s + 8}px;height:${s + 8}px">
@@ -1631,17 +1659,23 @@
       }
     }
 
-    async function addGeneratedIcon() {
+    function addGeneratedIcon() {
       if (!pendingIcon) return;
-      aiIcons.push(pendingIcon);
-      await saveAiIcons();
+      // It's already saved on the server via /api/generate
+      // We just need to refresh our local state and UI
+      allIcons.push(pendingIcon);
       updateStats();
       closeGenerate();
       currentCategory = 'all'; currentSearch = '';
       document.getElementById('search').value = '';
-      document.querySelectorAll('.filter-tab').forEach((b, i) => { b.classList.toggle('active', i === 0); b.style.background = ''; b.style.borderColor = ''; b.style.color = ''; });
+      document.querySelectorAll('.filter-tab').forEach((b, i) => {
+        b.classList.toggle('active', i === 0);
+        b.style.background = '';
+        b.style.borderColor = '';
+        b.style.color = '';
+      });
       renderGrid();
-      showToast(`✦ "${pendingIcon.name}" added — visible to all users!`);
+      showToast(`✦ "${pendingIcon.name}" added — visible to everyone!`);
       pendingIcon = null;
     }
 
@@ -1667,18 +1701,12 @@
       document.getElementById('api-panel').classList.remove('open');
     }
     function exportAllJson() {
-      const all = [...BASE_ICONS, ...aiIcons];
+      const all = allIcons;
       const payload = { version: '1.0.0', count: all.length, license: 'MIT', categories: [...new Set(all.map(i => i.category))], icons: all.map(i => ({ id: i.id, name: i.name, category: i.category, tags: i.tags, path: i.path, svg: makeSvg(i), viewBox: '0 0 24 24', strokeWidth: 1.5, generated: i.generated || false })) };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href = url; a.download = 'icons.json'; a.click();
       URL.revokeObjectURL(url);
-    }
-    function copyJsonEndpoint() {
-      navigator.clipboard.writeText('/api/icons.json').then(() => {
-        const el = document.querySelector('.json-endpoint'); el.textContent = '✓ Copied!';
-        setTimeout(() => { el.textContent = '📦 GET /api/icons.json'; }, 1500);
-      });
     }
 
     // ===================== KEYBOARD =====================
@@ -1696,7 +1724,8 @@
     });
 
     // ===================== INIT =====================
-    loadAiIcons().then(() => { updateStats(); renderGrid(); });
+    loadIcons();
+
   </script>
 </body>
 
