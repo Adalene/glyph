@@ -33,26 +33,30 @@ export default async function handler(req, res) {
   }
 
   const styleGuide = {
-    outline: 'Clean minimal Lucide/Feather-style stroke paths. Simple geometric forms. Elegant and immediately recognizable.',
-    minimal: 'Ultra-minimal. 2–4 strokes maximum. Abstract geometric reduction of the concept.',
-    detailed: 'More complex with inner detail lines. Still stroke-only but richer silhouette.',
-  }[style] || styleGuide.outline;
+    outline: 'Clean minimal Lucide/Feather-style stroke paths. Simple geometric forms. Elegant, balanced, and immediately recognizable. 2px equivalent weight.',
+    minimal: 'Ultra-minimal reduction. 2–4 strokes maximum. Abstract geometric reduction of the concept focused on semantic essence.',
+    detailed: 'Sophisticated construction with internal detail lines. Maintains stroke-only but provides a richer silhouette and narrative.',
+  }[style] || 'Clean minimal Lucide/Feather-style stroke paths.';
 
-  const prompt = `You are an expert SVG icon designer for a stroke-based icon system (like Lucide or Feather Icons).
+  const prompt = `You are an elite Icon Designer, expert in minimalist, stroke-based iconography (e.g., Lucide, Feather, Heroicons). 
 
-Design a "${name}" icon for category "${category}".
-Style: ${styleGuide}
+Your goal is to create a professional-grade SVG icon for "${name}" in the "${category}" category.
 
-STRICT RULES:
-- viewBox: 0 0 24 24
-- Output ONLY the SVG path "d" attribute value(s)
-- Multiple sub-paths: join with a space in one string
-- NO fill anywhere — stroke only
-- Coordinates stay within 2–22 (2px padding all sides)
-- Must be immediately recognizable as "${name}"
-- 3–6 relevant search tags
+DESIGN REQUIREMENTS:
+1. Grid-Based Construction: Design for a 24x24 grid. Align major points to the grid for optical sharpness.
+2. Optical Centering: Ensure the visual weight of the icon is perfectly centered in the 24x24 frame.
+3. Geometric Perfection: Use standard geometric primitives (circles, rects with radii, arcs, straight lines). Avoid organic or irregular paths.
+4. Simplicity & Clarity: Use the absolute minimum number of points and paths. The icon must be legible at 16x16px.
+5. Stroke Style: ${styleGuide}
+6. No Fill: Output ONLY path data for strokes. NO fill-rule or fill attributes.
 
-Respond ONLY with valid JSON, no markdown fences:
+TECHNICAL RULES:
+- ViewBox: "0 0 24 24"
+- Padding: Keep all coordinates between 2 and 22 to prevent clipping.
+- Output Format: ONLY return the "d" attribute string. If multiple paths are required, concatenate them with a single space.
+- JSON Only: Respond with a single JSON object. No markdown, no commentary.
+
+JSON Schema:
 {"path":"<path d value>","tags":["tag1","tag2","tag3"]}`;
 
   try {
@@ -64,7 +68,7 @@ Respond ONLY with valid JSON, no markdown fences:
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001', // updated to correct stabilized model ID
+        model: 'claude-sonnet-4-6', // Upgraded to the latest high-quality model
         max_tokens: 512,
         messages: [{ role: 'user', content: prompt }],
       }),
