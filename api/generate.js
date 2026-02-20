@@ -33,8 +33,8 @@ export default async function handler(req, res) {
   }
 
   const styleGuide = {
-    outline:  'Clean minimal Lucide/Feather-style stroke paths. Simple geometric forms. Elegant and immediately recognizable.',
-    minimal:  'Ultra-minimal. 2–4 strokes maximum. Abstract geometric reduction of the concept.',
+    outline: 'Clean minimal Lucide/Feather-style stroke paths. Simple geometric forms. Elegant and immediately recognizable.',
+    minimal: 'Ultra-minimal. 2–4 strokes maximum. Abstract geometric reduction of the concept.',
     detailed: 'More complex with inner detail lines. Still stroke-only but richer silhouette.',
   }[style] || styleGuide.outline;
 
@@ -64,19 +64,27 @@ Respond ONLY with valid JSON, no markdown fences:
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001', // fast + cheap for icon generation
+        model: 'claude-3-5-haiku-latest', // stable and fast for icon generation
         max_tokens: 512,
         messages: [{ role: 'user', content: prompt }],
       }),
     });
 
     if (!upstream.ok) {
-      const err = await upstream.text();
-      console.error('Anthropic error:', err);
-      return res.status(502).json({ error: 'Upstream API error.' });
+      const errorText = await upstream.text();
+      console.error('Anthropic API Error:', errorText);
+      let errorMessage = 'Upstream API error.';
+      try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.error && errorJson.error.message) {
+          errorMessage = `Anthropic Error: ${errorJson.error.message}`;
+        }
+      } catch (e) { }
+      return res.status(upstream.status).json({ error: errorMessage });
     }
 
     const data = await upstream.json();
+
     const text = data.content.map(c => c.text || '').join('').trim()
       .replace(/```json\s*/gi, '').replace(/```/g, '').trim();
 
