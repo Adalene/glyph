@@ -1,739 +1,1703 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GLYPH — Open Icon Library</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #0a0a0b; --surface: #111113; --surface2: #18181c; --border: #2a2a30;
-    --accent: #e8f060; --accent2: #60e8c8; --text: #f0f0ee; --muted: #6b6b78;
-    --gen: #c084fc;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-weight: 300; min-height: 100vh; overflow-x: hidden; }
-  body::before { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events: none; z-index: 999; opacity: 0.4; }
-  header { border-bottom: 1px solid var(--border); padding: 0 48px; display: flex; align-items: center; justify-content: space-between; height: 64px; position: sticky; top: 0; background: rgba(10,10,11,0.92); backdrop-filter: blur(12px); z-index: 100; }
-  .logo { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 900; letter-spacing: -0.5px; color: var(--accent); text-decoration: none; }
-  .logo span { color: var(--text); }
-  .header-right { display: flex; align-items: center; gap: 10px; }
-  .badge { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--accent2); border: 1px solid var(--accent2); padding: 3px 8px; border-radius: 2px; letter-spacing: 1px; text-transform: uppercase; }
-  .api-btn { font-family: 'DM Mono', monospace; font-size: 11px; background: var(--accent); color: #000; border: none; padding: 7px 16px; cursor: pointer; font-weight: 500; letter-spacing: 0.5px; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; }
-  .api-btn:hover { background: #fff; }
-  .gen-btn { background: var(--gen) !important; color: #000 !important; }
-  .gen-btn:hover { background: #d8a8ff !important; }
-  .hero { padding: 80px 48px 60px; border-bottom: 1px solid var(--border); position: relative; overflow: hidden; }
-  .hero-bg { position: absolute; top: -60px; right: -80px; width: 500px; height: 500px; background: radial-gradient(circle, rgba(232,240,96,0.06) 0%, transparent 65%); pointer-events: none; }
-  .hero-tag { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; }
-  h1 { font-family: 'Playfair Display', serif; font-size: clamp(42px, 6vw, 80px); font-weight: 900; line-height: 1; letter-spacing: -2px; color: var(--text); margin-bottom: 16px; }
-  h1 em { font-style: italic; color: var(--accent); }
-  .hero-sub { font-size: 16px; color: var(--muted); max-width: 560px; line-height: 1.6; margin-bottom: 40px; font-weight: 300; }
-  .stats-row { display: flex; gap: 48px; align-items: center; }
-  .stat { display: flex; flex-direction: column; gap: 2px; }
-  .stat-num { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: var(--accent); }
-  .stat-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; }
-  .stat-num.ai { color: var(--gen); }
-  .controls { padding: 24px 48px; border-bottom: 1px solid var(--border); display: flex; gap: 16px; align-items: center; background: var(--surface); flex-wrap: wrap; }
-  .search-wrap { position: relative; flex: 1; min-width: 240px; max-width: 400px; }
-  .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
-  input[type="text"] { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; padding: 10px 14px 10px 40px; outline: none; transition: border-color 0.2s; }
-  input[type="text"]:focus { border-color: var(--accent); }
-  input[type="text"]::placeholder { color: var(--muted); }
-  .filter-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
-  .filter-tab { font-family: 'DM Mono', monospace; font-size: 11px; padding: 8px 14px; background: transparent; border: 1px solid var(--border); color: var(--muted); cursor: pointer; letter-spacing: 0.5px; transition: all 0.15s; }
-  .filter-tab:hover { background: var(--accent); color: #000; border-color: var(--accent); }
-  .filter-tab.active { background: var(--accent); color: #000; border-color: var(--accent); }
-  .filter-tab.ai-tab { border-color: rgba(192,132,252,0.4); color: var(--gen); }
-  .filter-tab.ai-tab:hover, .filter-tab.ai-tab.active { background: var(--gen); color: #000; border-color: var(--gen); }
-  .count { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); margin-left: auto; }
-  .grid-wrap { padding: 32px 48px; }
-  .ai-section-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--gen); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid rgba(192,132,252,0.2); display: none; }
-  .ai-section-label.visible { display: flex; align-items: center; gap: 10px; }
-  .icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
-  .icon-card { background: var(--surface); border: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 8px 14px; gap: 10px; cursor: pointer; position: relative; transition: all 0.2s; animation: fadeUp 0.4s ease both; }
-  .icon-card:hover { border-color: var(--accent); background: var(--surface2); transform: translateY(-2px); }
-  .icon-card svg { width: 24px; height: 24px; stroke: var(--text); fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; transition: stroke 0.2s; }
-  .icon-card:hover svg { stroke: var(--accent); }
-  .icon-name { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); letter-spacing: 0.3px; text-align: center; line-height: 1.3; }
-  .icon-card.ai-gen { border-color: rgba(192,132,252,0.25); }
-  .icon-card.ai-gen:hover { border-color: var(--gen); }
-  .icon-card.ai-gen:hover svg { stroke: var(--gen); }
-  .ai-badge { position: absolute; top: 5px; right: 5px; font-family: 'DM Mono', monospace; font-size: 7px; background: var(--gen); color: #000; padding: 1px 4px; font-weight: 500; letter-spacing: 0.3px; }
-  .copy-flash { position: absolute; inset: 0; background: rgba(232,240,96,0.1); display: flex; align-items: center; justify-content: center; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--accent); opacity: 0; pointer-events: none; transition: opacity 0.3s; }
-  .icon-card.copied .copy-flash { opacity: 1; }
-  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-  .no-results { text-align: center; padding: 80px 0; font-family: 'DM Mono', monospace; font-size: 13px; display: none; }
-  .no-results-glyph { font-size: 36px; color: var(--border); margin-bottom: 16px; }
-  .no-results-main { color: var(--text); font-size: 15px; margin-bottom: 8px; }
-  .no-results-sub { color: var(--muted); font-size: 12px; margin-bottom: 28px; line-height: 1.7; }
-  .btn { font-family: 'DM Mono', monospace; font-size: 11px; padding: 10px 20px; border: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer; letter-spacing: 0.5px; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; }
-  .btn:hover { border-color: var(--accent); color: var(--accent); }
-  .btn.primary { background: var(--accent); color: #000; border-color: var(--accent); }
-  .btn.primary:hover { background: #fff; border-color: #fff; }
-  .btn.gen { background: var(--gen) !important; color: #000 !important; border-color: var(--gen) !important; }
-  .btn.gen:hover { background: #d8a8ff !important; border-color: #d8a8ff !important; color: #000 !important; }
-  /* MODAL */
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); z-index: 200; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
-  .modal-overlay.open { opacity: 1; pointer-events: all; }
-  .modal { background: var(--surface); border: 1px solid var(--border); width: 520px; max-width: 95vw; padding: 40px; position: relative; transform: translateY(20px); transition: transform 0.25s; }
-  .modal-overlay.open .modal { transform: translateY(0); }
-  .modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 20px; line-height: 1; padding: 4px; transition: color 0.15s; }
-  .modal-close:hover { color: var(--text); }
-  .modal-preview { display: flex; align-items: center; justify-content: center; width: 80px; height: 80px; border: 1px solid var(--border); background: var(--bg); margin-bottom: 20px; }
-  .modal-preview svg { width: 36px; height: 36px; stroke: var(--accent); fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-  .modal-title { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; margin-bottom: 4px; }
-  .modal-cat { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--accent2); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 24px; }
-  .modal-tabs { display: flex; gap: 2px; margin-bottom: 16px; }
-  .modal-tab { font-family: 'DM Mono', monospace; font-size: 11px; padding: 7px 14px; background: var(--bg); border: 1px solid var(--border); color: var(--muted); cursor: pointer; transition: all 0.15s; }
-  .modal-tab.active { background: var(--surface2); color: var(--text); border-color: var(--muted); }
-  .code-block { background: var(--bg); border: 1px solid var(--border); padding: 16px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--accent2); line-height: 1.7; overflow-x: auto; white-space: pre; max-height: 200px; overflow-y: auto; }
-  .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
-  /* GENERATE PANEL */
-  .gen-panel { position: fixed; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(10px); z-index: 400; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
-  .gen-panel.open { opacity: 1; pointer-events: all; }
-  .gen-box { background: var(--surface); border: 1px solid rgba(192,132,252,0.3); width: 580px; max-width: 95vw; max-height: 92vh; overflow-y: auto; padding: 48px; position: relative; transform: translateY(24px); transition: transform 0.3s; }
-  .gen-panel.open .gen-box { transform: translateY(0); }
-  .gen-box::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--gen), transparent); opacity: 0.5; }
-  .gen-tag { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--gen); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-  .gen-box h2 { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 900; margin-bottom: 8px; }
-  .gen-subtitle { color: var(--muted); font-size: 13px; margin-bottom: 32px; line-height: 1.6; }
-  .field-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; display: block; }
-  .gen-input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: 'DM Mono', monospace; font-size: 14px; padding: 14px 16px; outline: none; transition: border-color 0.2s; margin-bottom: 20px; }
-  .gen-input:focus { border-color: var(--gen); }
-  .gen-input::placeholder { color: var(--muted); }
-  .gen-row { display: flex; gap: 12px; margin-bottom: 20px; }
-  .gen-select { flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: 'DM Mono', monospace; font-size: 12px; padding: 10px 12px; outline: none; cursor: pointer; appearance: none; }
-  .gen-select:focus { border-color: var(--gen); }
-  .gen-status { display: none; align-items: center; gap: 12px; padding: 14px 16px; background: var(--bg); border: 1px solid var(--border); border-left: 2px solid var(--gen); margin-bottom: 20px; }
-  .gen-status.vis { display: flex; }
-  .spinner { width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--gen); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .gen-status-txt { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); }
-  .gen-preview { display: none; margin-bottom: 24px; }
-  .gen-preview.vis { display: block; }
-  .gen-preview-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--gen); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 14px; }
-  .gen-preview-row { display: flex; gap: 20px; align-items: flex-start; }
-  .gen-preview-left { display: flex; flex-direction: column; gap: 10px; }
-  .gen-preview-main { width: 96px; height: 96px; border: 1px solid rgba(192,132,252,0.3); background: var(--bg); display: flex; align-items: center; justify-content: center; }
-  .gen-preview-main svg { width: 44px; height: 44px; stroke: var(--gen); fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-  .gen-sizes { display: flex; gap: 8px; align-items: center; }
-  .sz-box { border: 1px solid var(--border); background: var(--bg); display: flex; align-items: center; justify-content: center; }
-  .sz-box svg { stroke: var(--text); fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.5; }
-  .gen-preview-right { flex: 1; }
-  .gen-preview-name { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; margin-bottom: 4px; }
-  .gen-preview-cat { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--gen); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
-  .gen-tags { display: flex; flex-wrap: wrap; gap: 4px; }
-  .gen-tag-pill { font-family: 'DM Mono', monospace; font-size: 9px; background: var(--surface2); color: var(--muted); padding: 3px 7px; }
-  .gen-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-  /* API PANEL */
-  .api-panel { position: fixed; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(6px); z-index: 300; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
-  .api-panel.open { opacity: 1; pointer-events: all; }
-  .api-box { background: var(--surface); border: 1px solid var(--border); width: 680px; max-width: 95vw; max-height: 90vh; overflow-y: auto; padding: 48px; position: relative; transform: scale(0.97); transition: transform 0.25s; }
-  .api-panel.open .api-box { transform: scale(1); }
-  .api-box h2 { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 900; margin-bottom: 6px; }
-  .api-box .subtitle { color: var(--muted); font-size: 14px; margin-bottom: 32px; line-height: 1.5; }
-  .endpoint { margin-bottom: 28px; }
-  .endpoint-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
-  .method { font-family: 'DM Mono', monospace; font-size: 10px; padding: 3px 8px; background: var(--accent); color: #000; font-weight: 500; }
-  .endpoint-path { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text); }
-  .endpoint-desc { font-size: 13px; color: var(--muted); margin-bottom: 12px; line-height: 1.5; }
-  footer { border-top: 1px solid var(--border); padding: 32px 48px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
-  .footer-left { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 0.5px; }
-  .footer-left strong { color: var(--accent); }
-  .json-endpoint { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--accent2); border: 1px dashed var(--border); padding: 8px 14px; cursor: pointer; transition: border-color 0.2s; }
-  .json-endpoint:hover { border-color: var(--accent2); }
-  .toast { position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(16px); background: var(--surface); border: 1px solid var(--gen); font-family: 'DM Mono', monospace; font-size: 12px; padding: 12px 24px; color: var(--gen); opacity: 0; transition: all 0.3s; z-index: 999; pointer-events: none; white-space: nowrap; }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-  ::-webkit-scrollbar { width: 4px; height: 4px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-  @media (max-width: 640px) { header, .hero, .controls, .grid-wrap, footer { padding-left: 20px; padding-right: 20px; } h1 { letter-spacing: -1px; } .stats-row { gap: 24px; } }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GLYPH — Open Icon Library</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0b;
+      --surface: #111113;
+      --surface2: #18181c;
+      --border: #2a2a30;
+      --accent: #e8f060;
+      --accent2: #60e8c8;
+      --text: #f0f0ee;
+      --muted: #6b6b78;
+      --gen: #c084fc;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 999;
+      opacity: 0.4;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 0 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      position: sticky;
+      top: 0;
+      background: rgba(10, 10, 11, 0.92);
+      backdrop-filter: blur(12px);
+      z-index: 100;
+    }
+
+    .logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .logo span {
+      color: var(--text);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .badge {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--accent2);
+      border: 1px solid var(--accent2);
+      padding: 3px 8px;
+      border-radius: 2px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .api-btn {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 7px 16px;
+      cursor: pointer;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .api-btn:hover {
+      background: #fff;
+    }
+
+    .gen-btn {
+      background: var(--gen) !important;
+      color: #000 !important;
+    }
+
+    .gen-btn:hover {
+      background: #d8a8ff !important;
+    }
+
+    .hero {
+      padding: 80px 48px 60px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      top: -60px;
+      right: -80px;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(232, 240, 96, 0.06) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    .hero-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(42px, 6vw, 80px);
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -2px;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+
+    h1 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .hero-sub {
+      font-size: 16px;
+      color: var(--muted);
+      max-width: 560px;
+      line-height: 1.6;
+      margin-bottom: 40px;
+      font-weight: 300;
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 48px;
+      align-items: center;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .stat-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .stat-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .stat-num.ai {
+      color: var(--gen);
+    }
+
+    .controls {
+      padding: 24px 48px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      background: var(--surface);
+      flex-wrap: wrap;
+    }
+
+    .search-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 240px;
+      max-width: 400px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      padding: 10px 14px 10px 40px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--accent);
+    }
+
+    input[type="text"]::placeholder {
+      color: var(--muted);
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .filter-tab {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      padding: 8px 14px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      transition: all 0.15s;
+    }
+
+    .filter-tab:hover {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+    }
+
+    .filter-tab.active {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+    }
+
+    .filter-tab.ai-tab {
+      border-color: rgba(192, 132, 252, 0.4);
+      color: var(--gen);
+    }
+
+    .filter-tab.ai-tab:hover,
+    .filter-tab.ai-tab.active {
+      background: var(--gen);
+      color: #000;
+      border-color: var(--gen);
+    }
+
+    .count {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      margin-left: auto;
+    }
+
+    .grid-wrap {
+      padding: 32px 48px;
+    }
+
+    .ai-section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--gen);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(192, 132, 252, 0.2);
+      display: none;
+    }
+
+    .ai-section-label.visible {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .icon-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 8px;
+    }
+
+    .icon-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 8px 14px;
+      gap: 10px;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s;
+      animation: fadeUp 0.4s ease both;
+    }
+
+    .icon-card:hover {
+      border-color: var(--accent);
+      background: var(--surface2);
+      transform: translateY(-2px);
+    }
+
+    .icon-card svg {
+      width: 24px;
+      height: 24px;
+      stroke: var(--text);
+      fill: none;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: stroke 0.2s;
+    }
+
+    .icon-card:hover svg {
+      stroke: var(--accent);
+    }
+
+    .icon-name {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 0.3px;
+      text-align: center;
+      line-height: 1.3;
+    }
+
+    .icon-card.ai-gen {
+      border-color: rgba(192, 132, 252, 0.25);
+    }
+
+    .icon-card.ai-gen:hover {
+      border-color: var(--gen);
+    }
+
+    .icon-card.ai-gen:hover svg {
+      stroke: var(--gen);
+    }
+
+    .ai-badge {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      font-family: 'DM Mono', monospace;
+      font-size: 7px;
+      background: var(--gen);
+      color: #000;
+      padding: 1px 4px;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+    }
+
+    .copy-flash {
+      position: absolute;
+      inset: 0;
+      background: rgba(232, 240, 96, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--accent);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .icon-card.copied .copy-flash {
+      opacity: 1;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 80px 0;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      display: none;
+    }
+
+    .no-results-glyph {
+      font-size: 36px;
+      color: var(--border);
+      margin-bottom: 16px;
+    }
+
+    .no-results-main {
+      color: var(--text);
+      font-size: 15px;
+      margin-bottom: 8px;
+    }
+
+    .no-results-sub {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 28px;
+      line-height: 1.7;
+    }
+
+    .btn {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      padding: 10px 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+    }
+
+    .btn.primary:hover {
+      background: #fff;
+      border-color: #fff;
+    }
+
+    .btn.gen {
+      background: var(--gen) !important;
+      color: #000 !important;
+      border-color: var(--gen) !important;
+    }
+
+    .btn.gen:hover {
+      background: #d8a8ff !important;
+      border-color: #d8a8ff !important;
+      color: #000 !important;
+    }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      width: 520px;
+      max-width: 95vw;
+      padding: 40px;
+      position: relative;
+      transform: translateY(20px);
+      transition: transform 0.25s;
+    }
+
+    .modal-overlay.open .modal {
+      transform: translateY(0);
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 20px;
+      line-height: 1;
+      padding: 4px;
+      transition: color 0.15s;
+    }
+
+    .modal-close:hover {
+      color: var(--text);
+    }
+
+    .modal-preview {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 80px;
+      height: 80px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      margin-bottom: 20px;
+    }
+
+    .modal-preview svg {
+      width: 36px;
+      height: 36px;
+      stroke: var(--accent);
+      fill: none;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .modal-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .modal-cat {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--accent2);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .modal-tabs {
+      display: flex;
+      gap: 2px;
+      margin-bottom: 16px;
+    }
+
+    .modal-tab {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      padding: 7px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .modal-tab.active {
+      background: var(--surface2);
+      color: var(--text);
+      border-color: var(--muted);
+    }
+
+    .code-block {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 16px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--accent2);
+      line-height: 1.7;
+      overflow-x: auto;
+      white-space: pre;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    /* GENERATE PANEL */
+    .gen-panel {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.9);
+      backdrop-filter: blur(10px);
+      z-index: 400;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+    }
+
+    .gen-panel.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .gen-box {
+      background: var(--surface);
+      border: 1px solid rgba(192, 132, 252, 0.3);
+      width: 580px;
+      max-width: 95vw;
+      max-height: 92vh;
+      overflow-y: auto;
+      padding: 48px;
+      position: relative;
+      transform: translateY(24px);
+      transition: transform 0.3s;
+    }
+
+    .gen-panel.open .gen-box {
+      transform: translateY(0);
+    }
+
+    .gen-box::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gen), transparent);
+      opacity: 0.5;
+    }
+
+    .gen-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--gen);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .gen-box h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 28px;
+      font-weight: 900;
+      margin-bottom: 8px;
+    }
+
+    .gen-subtitle {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 32px;
+      line-height: 1.6;
+    }
+
+    .field-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .gen-input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 14px;
+      padding: 14px 16px;
+      outline: none;
+      transition: border-color 0.2s;
+      margin-bottom: 20px;
+    }
+
+    .gen-input:focus {
+      border-color: var(--gen);
+    }
+
+    .gen-input::placeholder {
+      color: var(--muted);
+    }
+
+    .gen-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .gen-select {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      padding: 10px 12px;
+      outline: none;
+      cursor: pointer;
+      appearance: none;
+    }
+
+    .gen-select:focus {
+      border-color: var(--gen);
+    }
+
+    .gen-status {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-left: 2px solid var(--gen);
+      margin-bottom: 20px;
+    }
+
+    .gen-status.vis {
+      display: flex;
+    }
+
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--border);
+      border-top-color: var(--gen);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .gen-status-txt {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .gen-preview {
+      display: none;
+      margin-bottom: 24px;
+    }
+
+    .gen-preview.vis {
+      display: block;
+    }
+
+    .gen-preview-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--gen);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .gen-preview-row {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+
+    .gen-preview-left {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .gen-preview-main {
+      width: 96px;
+      height: 96px;
+      border: 1px solid rgba(192, 132, 252, 0.3);
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .gen-preview-main svg {
+      width: 44px;
+      height: 44px;
+      stroke: var(--gen);
+      fill: none;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .gen-sizes {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .sz-box {
+      border: 1px solid var(--border);
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sz-box svg {
+      stroke: var(--text);
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 1.5;
+    }
+
+    .gen-preview-right {
+      flex: 1;
+    }
+
+    .gen-preview-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .gen-preview-cat {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--gen);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .gen-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .gen-tag-pill {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      background: var(--surface2);
+      color: var(--muted);
+      padding: 3px 7px;
+    }
+
+    .gen-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* API PANEL */
+    .api-panel {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.9);
+      backdrop-filter: blur(6px);
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .api-panel.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .api-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      width: 680px;
+      max-width: 95vw;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 48px;
+      position: relative;
+      transform: scale(0.97);
+      transition: transform 0.25s;
+    }
+
+    .api-panel.open .api-box {
+      transform: scale(1);
+    }
+
+    .api-box h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 32px;
+      font-weight: 900;
+      margin-bottom: 6px;
+    }
+
+    .api-box .subtitle {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 32px;
+      line-height: 1.5;
+    }
+
+    .endpoint {
+      margin-bottom: 28px;
+    }
+
+    .endpoint-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .method {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      padding: 3px 8px;
+      background: var(--accent);
+      color: #000;
+      font-weight: 500;
+    }
+
+    .endpoint-path {
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .endpoint-desc {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 48px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .footer-left {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.5px;
+    }
+
+    .footer-left strong {
+      color: var(--accent);
+    }
+
+    .json-endpoint {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--accent2);
+      border: 1px dashed var(--border);
+      padding: 8px 14px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .json-endpoint:hover {
+      border-color: var(--accent2);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(16px);
+      background: var(--surface);
+      border: 1px solid var(--gen);
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      padding: 12px 24px;
+      color: var(--gen);
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 999;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 2px;
+    }
+
+    @media (max-width: 640px) {
+
+      header,
+      .hero,
+      .controls,
+      .grid-wrap,
+      footer {
+        padding-left: 20px;
+        padding-right: 20px;
+      }
+
+      h1 {
+        letter-spacing: -1px;
+      }
+
+      .stats-row {
+        gap: 24px;
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-<header>
-  <a class="logo" href="#">GLYPH<span>.</span></a>
-  <div class="header-right">
-    <span class="badge">v1.0.0 — MIT</span>
-    <button class="api-btn gen-btn" onclick="openGenerate()">
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-      GENERATE
-    </button>
-    <button class="api-btn" onclick="openApi()">API DOCS</button>
-  </div>
-</header>
-
-<section class="hero">
-  <div class="hero-bg"></div>
-  <div class="hero-tag">Open Icon System</div>
-  <h1>Icons for<br><em>humans</em> &<br>machines.</h1>
-  <p class="hero-sub">A curated library of crisp SVG icons. Browse, copy, or consume the JSON API. Can't find what you need? Hit <strong style="color:var(--gen)">Generate</strong> — AI designs it instantly and adds it to the shared library for everyone.</p>
-  <div class="stats-row">
-    <div class="stat"><span class="stat-num" id="total-count">80</span><span class="stat-label">Total Icons</span></div>
-    <div class="stat"><span class="stat-num ai" id="ai-count">0</span><span class="stat-label">AI Generated</span></div>
-    <div class="stat"><span class="stat-num">MIT</span><span class="stat-label">License</span></div>
-    <div class="stat"><span class="stat-num">JSON</span><span class="stat-label">API Ready</span></div>
-  </div>
-</section>
-
-<div class="controls">
-  <div class="search-wrap">
-    <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.5" y1="15.5" x2="21" y2="21"/></svg>
-    <input type="text" id="search" placeholder="search icons..." oninput="filterIcons()">
-  </div>
-  <div class="filter-tabs">
-    <button class="filter-tab active" onclick="setCategory('all',this)">All</button>
-    <button class="filter-tab" onclick="setCategory('ui',this)">UI</button>
-    <button class="filter-tab" onclick="setCategory('media',this)">Media</button>
-    <button class="filter-tab" onclick="setCategory('files',this)">Files</button>
-    <button class="filter-tab" onclick="setCategory('arrows',this)">Arrows</button>
-    <button class="filter-tab" onclick="setCategory('comms',this)">Comms</button>
-    <button class="filter-tab" onclick="setCategory('data',this)">Data</button>
-    <button class="filter-tab" onclick="setCategory('weather',this)">Weather</button>
-    <button class="filter-tab" onclick="setCategory('objects',this)">Objects</button>
-    <button class="filter-tab ai-tab" onclick="setCategory('generated',this)" id="tab-ai">✦ AI</button>
-  </div>
-  <span class="count" id="count-label">80 icons</span>
-</div>
-
-<div class="grid-wrap">
-  <div class="ai-section-label" id="ai-section-label">✦ Community AI-Generated Icons</div>
-  <div class="icon-grid" id="icon-grid"></div>
-  <div class="no-results" id="no-results">
-    <div class="no-results-glyph">⬡</div>
-    <div class="no-results-main">No icon found for "<span id="no-results-term"></span>"</div>
-    <div class="no-results-sub">This icon doesn't exist in GLYPH yet.<br>Generate it with AI — it'll be added to the shared library for everyone.</div>
-    <button class="btn gen" onclick="openGenerateWithTerm()">
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-      Generate this icon
-    </button>
-  </div>
-</div>
-
-<footer>
-  <div class="footer-left">GLYPH Icon Library — <strong>MIT License</strong> — Free to use in personal & commercial projects.</div>
-  <div class="json-endpoint" onclick="copyJsonEndpoint()" title="Click to copy JSON API URL">📦 GET /api/icons.json</div>
-</footer>
-
-<div class="toast" id="toast"></div>
-
-<!-- Icon Detail Modal -->
-<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal()">✕</button>
-    <div class="modal-preview" id="modal-preview"></div>
-    <div class="modal-title" id="modal-title"></div>
-    <div class="modal-cat" id="modal-cat"></div>
-    <div class="modal-tabs">
-      <button class="modal-tab active" onclick="switchTab('svg',this)">SVG</button>
-      <button class="modal-tab" onclick="switchTab('jsx',this)">JSX</button>
-      <button class="modal-tab" onclick="switchTab('json',this)">JSON</button>
-      <button class="modal-tab" onclick="switchTab('url',this)">Data URL</button>
-    </div>
-    <div class="code-block" id="modal-code"></div>
-    <div class="modal-actions">
-      <button class="btn primary" onclick="copyModalCode()">Copy Code</button>
-      <button class="btn" onclick="downloadIcon()">Download SVG</button>
-    </div>
-  </div>
-</div>
-
-<!-- Generate Panel -->
-<div class="gen-panel" id="gen-panel" onclick="closeGenerate(event)">
-  <div class="gen-box">
-    <button class="modal-close" onclick="closeGenerate()">✕</button>
-    <div class="gen-tag">✦ AI Icon Generator</div>
-    <h2>Request an icon.</h2>
-    <p class="gen-subtitle">Describe any icon — GLYPH will generate it from a curated dictionary of 200+ icon shapes and add it to the library so the whole community can use it. Works fully offline.</p>
-
-    <label class="field-label" for="gen-name">Icon name or description</label>
-    <input class="gen-input" id="gen-name" type="text" placeholder="e.g. fire, DNA helix, rocket, syringe..." autocomplete="off">
-
-    <div class="gen-row">
-      <div style="flex:1">
-        <label class="field-label">Category</label>
-        <select class="gen-select" id="gen-category">
-          <option value="objects">Objects</option>
-          <option value="ui">UI</option>
-          <option value="media">Media</option>
-          <option value="files">Files</option>
-          <option value="arrows">Arrows</option>
-          <option value="comms">Comms</option>
-          <option value="data">Data</option>
-          <option value="weather">Weather</option>
-        </select>
-      </div>
-      <div style="flex:1">
-        <label class="field-label">Style</label>
-        <select class="gen-select" id="gen-style">
-          <option value="outline">Outline (default)</option>
-          <option value="minimal">Minimal / geometric</option>
-          <option value="detailed">Detailed</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="gen-status" id="gen-status">
-      <div class="spinner"></div>
-      <span class="gen-status-txt" id="gen-status-txt">Designing icon with AI...</span>
-    </div>
-
-    <div class="gen-preview" id="gen-preview">
-      <div class="gen-preview-label">Preview</div>
-      <div class="gen-preview-row">
-        <div class="gen-preview-left">
-          <div class="gen-preview-main" id="gen-preview-main"></div>
-          <div class="gen-sizes" id="gen-sizes"></div>
-        </div>
-        <div class="gen-preview-right">
-          <div class="gen-preview-name" id="gen-preview-name"></div>
-          <div class="gen-preview-cat" id="gen-preview-cat"></div>
-          <div class="gen-tags" id="gen-tags"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="gen-actions">
-      <button class="btn gen" id="gen-add-btn" onclick="addGeneratedIcon()" style="display:none">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        Add to Library
+  <header>
+    <a class="logo" href="#">GLYPH<span>.</span></a>
+    <div class="header-right">
+      <span class="badge">v1.0.0 — MIT</span>
+      <button class="api-btn gen-btn" onclick="openGenerate()">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <polygon
+            points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+        </svg>
+        GENERATE
       </button>
-      <button class="btn" id="gen-retry-btn" onclick="retryGenerate()" style="display:none">↺ Regenerate</button>
-      <button class="btn primary" id="gen-submit-btn" onclick="generateIcon()">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-        Generate Icon
+      <button class="api-btn" onclick="openApi()">API DOCS</button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-tag">Open Icon System</div>
+    <h1>Icons for<br><em>humans</em> &<br>machines.</h1>
+    <p class="hero-sub">A curated library of crisp SVG icons. Browse, copy, or consume the JSON API. Can't find what you
+      need? Hit <strong style="color:var(--gen)">Generate</strong> — AI designs it instantly and adds it to the shared
+      library for everyone.</p>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-num" id="total-count">80</span><span class="stat-label">Total Icons</span>
+      </div>
+      <div class="stat"><span class="stat-num ai" id="ai-count">0</span><span class="stat-label">AI Generated</span>
+      </div>
+      <div class="stat"><span class="stat-num">MIT</span><span class="stat-label">License</span></div>
+      <div class="stat"><span class="stat-num">JSON</span><span class="stat-label">API Ready</span></div>
+    </div>
+  </section>
+
+  <div class="controls">
+    <div class="search-wrap">
+      <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="10.5" cy="10.5" r="6.5" />
+        <line x1="15.5" y1="15.5" x2="21" y2="21" />
+      </svg>
+      <input type="text" id="search" placeholder="search icons..." oninput="filterIcons()">
+    </div>
+    <div class="filter-tabs">
+      <button class="filter-tab active" onclick="setCategory('all',this)">All</button>
+      <button class="filter-tab" onclick="setCategory('ui',this)">UI</button>
+      <button class="filter-tab" onclick="setCategory('media',this)">Media</button>
+      <button class="filter-tab" onclick="setCategory('files',this)">Files</button>
+      <button class="filter-tab" onclick="setCategory('arrows',this)">Arrows</button>
+      <button class="filter-tab" onclick="setCategory('comms',this)">Comms</button>
+      <button class="filter-tab" onclick="setCategory('data',this)">Data</button>
+      <button class="filter-tab" onclick="setCategory('weather',this)">Weather</button>
+      <button class="filter-tab" onclick="setCategory('objects',this)">Objects</button>
+      <button class="filter-tab ai-tab" onclick="setCategory('generated',this)" id="tab-ai">✦ AI</button>
+    </div>
+    <span class="count" id="count-label">80 icons</span>
+  </div>
+
+  <div class="grid-wrap">
+    <div class="ai-section-label" id="ai-section-label">✦ Community AI-Generated Icons</div>
+    <div class="icon-grid" id="icon-grid"></div>
+    <div class="no-results" id="no-results">
+      <div class="no-results-glyph">⬡</div>
+      <div class="no-results-main">No icon found for "<span id="no-results-term"></span>"</div>
+      <div class="no-results-sub">This icon doesn't exist in GLYPH yet.<br>Generate it with AI — it'll be added to the
+        shared library for everyone.</div>
+      <button class="btn gen" onclick="openGenerateWithTerm()">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <polygon
+            points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+        </svg>
+        Generate this icon
       </button>
     </div>
   </div>
-</div>
 
-<!-- API Docs Panel -->
-<div class="api-panel" id="api-panel" onclick="closeApi(event)">
-  <div class="api-box">
-    <button class="modal-close" onclick="closeApi()">✕</button>
-    <h2>API Reference</h2>
-    <p class="subtitle">GLYPH exposes a static JSON API for programmatic access. AI agents can fetch, filter, and generate icons.</p>
-    <div class="endpoint">
-      <div class="endpoint-header"><span class="method">GET</span><span class="endpoint-path">/api/icons.json</span></div>
-      <p class="endpoint-desc">All icons including community AI-generated ones with full metadata.</p>
-      <div class="code-block">fetch('/api/icons.json').then(r => r.json()).then(({ icons }) => {
-  // icons: [{ id, name, category, tags, path, svg, generated }]
-});</div>
+  <footer>
+    <div class="footer-left">GLYPH Icon Library — <strong>MIT License</strong> — Free to use in personal & commercial
+      projects.</div>
+    <div class="json-endpoint" onclick="copyJsonEndpoint()" title="Click to copy JSON API URL">📦 GET /api/icons.json
     </div>
-    <div class="endpoint">
-      <div class="endpoint-header"><span class="method">GET</span><span class="endpoint-path">/api/icons.json?category=objects</span></div>
-      <p class="endpoint-desc">Filter by category: ui, media, files, arrows, comms, data, weather, objects, generated.</p>
-      <div class="code-block">const { icons } = await fetch('/api/icons.json?category=objects').then(r=>r.json());</div>
-    </div>
-    <div class="endpoint">
-      <div class="endpoint-header"><span class="method">POST</span><span class="endpoint-path">/api/generate</span></div>
-      <p class="endpoint-desc">Generate a new icon via AI and add it to the shared library immediately.</p>
-      <div class="code-block">const { icon } = await fetch('/api/generate', {
-  method: 'POST',
-  body: JSON.stringify({ name: 'fire', category: 'objects', style: 'outline' })
-}).then(r => r.json());
-// icon.path, icon.svg, icon.tags, icon.id</div>
-    </div>
-    <div style="border-top:1px solid var(--border);padding-top:24px;margin-top:8px;">
-      <div class="endpoint-header" style="margin-bottom:12px;"><span class="method" style="background:var(--gen)">AI</span><span class="endpoint-path">Agent Tool Example</span></div>
-      <div class="code-block">// Tool: get_or_generate_icon
-async function get_or_generate_icon({ name, category }) {
-  const { icons } = await fetch('/api/icons.json').then(r=>r.json());
-  const match = icons.find(i =>
-    i.id === name.toLowerCase() ||
-    i.name.toLowerCase() === name.toLowerCase()
-  );
-  if (match) return match; // Found in library
-  // Not found — generate it
-  return fetch('/api/generate', {
-    method: 'POST',
-    body: JSON.stringify({ name, category })
-  }).then(r => r.json()).then(d => d.icon);
-}</div>
-    </div>
-    <div class="modal-actions" style="margin-top:24px;">
-      <button class="btn primary" onclick="exportAllJson()">Export icons.json</button>
-      <button class="btn" onclick="closeApi()">Close</button>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- Icon Detail Modal -->
+  <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <div class="modal-preview" id="modal-preview"></div>
+      <div class="modal-title" id="modal-title"></div>
+      <div class="modal-cat" id="modal-cat"></div>
+      <div class="modal-tabs">
+        <button class="modal-tab active" onclick="switchTab('svg',this)">SVG</button>
+        <button class="modal-tab" onclick="switchTab('jsx',this)">JSX</button>
+        <button class="modal-tab" onclick="switchTab('json',this)">JSON</button>
+        <button class="modal-tab" onclick="switchTab('url',this)">Data URL</button>
+      </div>
+      <div class="code-block" id="modal-code"></div>
+      <div class="modal-actions">
+        <button class="btn primary" onclick="copyModalCode()">Copy Code</button>
+        <button class="btn" onclick="downloadIcon()">Download SVG</button>
+      </div>
     </div>
   </div>
-</div>
 
-<script>
-// ===================== ICON DATA =====================
-const BASE_ICONS = [
-  {id:'home',name:'Home',category:'ui',tags:['house','main'],path:'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10'},
-  {id:'settings',name:'Settings',category:'ui',tags:['gear','config','cog'],path:'M12 15A3 3 0 1 0 12 9 3 3 0 0 0 12 15Z M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z'},
-  {id:'user',name:'User',category:'ui',tags:['person','account','avatar'],path:'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 3A4 4 0 1 0 12 11 4 4 0 0 0 12 3Z'},
-  {id:'menu',name:'Menu',category:'ui',tags:['hamburger','nav','sidebar'],path:'M3 12h18 M3 6h18 M3 18h18'},
-  {id:'close',name:'Close',category:'ui',tags:['x','cancel','dismiss'],path:'M18 6L6 18 M6 6l12 12'},
-  {id:'search',name:'Search',category:'ui',tags:['find','magnify','look'],path:'M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13z M21 21l-4.5-4.5'},
-  {id:'plus',name:'Plus',category:'ui',tags:['add','create','new'],path:'M12 5v14 M5 12h14'},
-  {id:'minus',name:'Minus',category:'ui',tags:['remove','delete','subtract'],path:'M5 12h14'},
-  {id:'check',name:'Check',category:'ui',tags:['tick','done','success','verify'],path:'M20 6L9 17l-5-5'},
-  {id:'info',name:'Info',category:'ui',tags:['information','help','tooltip'],path:'M12 22A10 10 0 1 0 12 2a10 10 0 0 0 0 20z M12 16v-4 M12 8h.01'},
-  {id:'alert',name:'Alert',category:'ui',tags:['warning','danger','caution'],path:'M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z M12 9v4 M12 17h.01'},
-  {id:'lock',name:'Lock',category:'ui',tags:['secure','password','private'],path:'M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2z M7 11V7a5 5 0 0 1 10 0v4'},
-  {id:'play',name:'Play',category:'media',tags:['start','video','audio'],path:'M5 3l14 9-14 9V3z'},
-  {id:'pause',name:'Pause',category:'media',tags:['stop','media'],path:'M6 4h4v16H6z M14 4h4v16h-4z'},
-  {id:'skip-forward',name:'Skip Forward',category:'media',tags:['next','fast-forward'],path:'M5 4l10 8-10 8V4z M19 5v14'},
-  {id:'skip-back',name:'Skip Back',category:'media',tags:['previous','rewind'],path:'M19 20L9 12l10-8v16z M5 19V5'},
-  {id:'volume',name:'Volume',category:'media',tags:['sound','speaker','audio'],path:'M11 5L6 9H2v6h4l5 4V5z M19.07 4.93a10 10 0 0 1 0 14.14 M15.54 8.46a5 5 0 0 1 0 7.07'},
-  {id:'mute',name:'Mute',category:'media',tags:['volume-off','silent','no-sound'],path:'M11 5L6 9H2v6h4l5 4V5z M23 9l-6 6 M17 9l6 6'},
-  {id:'camera',name:'Camera',category:'media',tags:['photo','picture','image'],path:'M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z M12 17A4 4 0 1 0 12 9a4 4 0 0 0 0 8z'},
-  {id:'mic',name:'Mic',category:'media',tags:['microphone','record','voice'],path:'M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z M19 10v2a7 7 0 0 1-14 0v-2 M12 19v4 M8 23h8'},
-  {id:'film',name:'Film',category:'media',tags:['movie','cinema','video'],path:'M1 4h22v16H1z M7 4v16 M17 4v16 M1 12h22 M7 8H1 M7 16H1 M23 8h-6 M23 16h-6'},
-  {id:'image',name:'Image',category:'media',tags:['photo','picture','gallery'],path:'M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14l5-3 3 2 3-2 5 3z M8.5 10A1.5 1.5 0 1 0 8.5 7 1.5 1.5 0 0 0 8.5 10z'},
-  {id:'file',name:'File',category:'files',tags:['document','paper'],path:'M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z M13 2v7h7'},
-  {id:'folder',name:'Folder',category:'files',tags:['directory','storage'],path:'M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z'},
-  {id:'folder-open',name:'Folder Open',category:'files',tags:['open','directory'],path:'M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z M2 11h20'},
-  {id:'upload',name:'Upload',category:'files',tags:['send','export','cloud'],path:'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M17 8l-5-5-5 5 M12 3v12'},
-  {id:'download',name:'Download',category:'files',tags:['save','import','receive'],path:'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M7 10l5 5 5-5 M12 15V3'},
-  {id:'trash',name:'Trash',category:'files',tags:['delete','remove','bin'],path:'M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2'},
-  {id:'copy',name:'Copy',category:'files',tags:['duplicate','clipboard'],path:'M20 9H11a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V11a2 2 0 0 0-2-2z M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'},
-  {id:'paperclip',name:'Paperclip',category:'files',tags:['attach','attachment'],path:'M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48'},
-  {id:'archive',name:'Archive',category:'files',tags:['box','store','save'],path:'M21 8v13H3V8 M1 3h22v5H1z M10 12h4'},
-  {id:'clipboard',name:'Clipboard',category:'files',tags:['paste','tasks','list'],path:'M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2 M9 2h6a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z'},
-  {id:'arrow-right',name:'Arrow Right',category:'arrows',tags:['next','forward'],path:'M5 12h14 M12 5l7 7-7 7'},
-  {id:'arrow-left',name:'Arrow Left',category:'arrows',tags:['back','previous'],path:'M19 12H5 M12 19l-7-7 7-7'},
-  {id:'arrow-up',name:'Arrow Up',category:'arrows',tags:['top','ascend'],path:'M12 19V5 M5 12l7-7 7 7'},
-  {id:'arrow-down',name:'Arrow Down',category:'arrows',tags:['bottom','descend'],path:'M12 5v14 M19 12l-7 7-7-7'},
-  {id:'chevron-right',name:'Chevron Right',category:'arrows',tags:['next','angle'],path:'M9 18l6-6-6-6'},
-  {id:'chevron-left',name:'Chevron Left',category:'arrows',tags:['back','angle'],path:'M15 18l-6-6 6-6'},
-  {id:'chevron-up',name:'Chevron Up',category:'arrows',tags:['top','angle'],path:'M18 15l-6-6-6 6'},
-  {id:'chevron-down',name:'Chevron Down',category:'arrows',tags:['bottom','angle'],path:'M6 9l6 6 6-6'},
-  {id:'refresh',name:'Refresh',category:'arrows',tags:['reload','sync','loop'],path:'M1 4v6h6 M23 20v-6h-6 M20.49 9A9 9 0 0 0 5.64 5.64L1 10 M23 14l-4.64 4.36A9 9 0 0 1 3.51 15'},
-  {id:'corner-up-right',name:'Corner Up Right',category:'arrows',tags:['redirect','turn'],path:'M15 14l5-5-5-5 M4 20v-7a4 4 0 0 1 4-4h12'},
-  {id:'repeat',name:'Repeat',category:'arrows',tags:['loop','cycle'],path:'M17 1l4 4-4 4 M3 11V9a4 4 0 0 1 4-4h14 M7 23l-4-4 4-4 M21 13v2a4 4 0 0 1-4 4H3'},
-  {id:'shuffle',name:'Shuffle',category:'arrows',tags:['random','mix'],path:'M16 3h5v5 M4 20L21 3 M21 16v5h-5 M15 15l6 6 M4 4l5 5'},
-  {id:'mail',name:'Mail',category:'comms',tags:['email','envelope','message'],path:'M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z M22 6l-10 7L2 6'},
-  {id:'message',name:'Message',category:'comms',tags:['chat','bubble','talk'],path:'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 0 2 2z'},
-  {id:'phone',name:'Phone',category:'comms',tags:['call','contact','ring'],path:'M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.41 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.94-.94a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z'},
-  {id:'bell',name:'Bell',category:'comms',tags:['notification','alert','ring'],path:'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 0 1-3.46 0'},
-  {id:'send',name:'Send',category:'comms',tags:['submit','share','post'],path:'M22 2L11 13 M22 2L15 22 9 13 2 9l20-7z'},
-  {id:'rss',name:'RSS',category:'comms',tags:['feed','subscribe','blog'],path:'M4 11a9 9 0 0 1 9 9 M4 4a16 16 0 0 1 16 16 M5 19A1 1 0 1 0 5 17a1 1 0 0 0 0 2z'},
-  {id:'share',name:'Share',category:'comms',tags:['social','distribute','spread'],path:'M18 8A3 3 0 1 0 18 2a3 3 0 0 0 0 6z M6 15A3 3 0 1 0 6 9a3 3 0 0 0 0 6z M18 22A3 3 0 1 0 18 16a3 3 0 0 0 0 6z M8.59 13.51l6.83 3.98 M15.41 6.51l-6.82 3.98'},
-  {id:'wifi',name:'WiFi',category:'comms',tags:['wireless','internet','network'],path:'M5 12.55a11 11 0 0 1 14.08 0 M1.42 9a16 16 0 0 1 21.16 0 M8.53 16.11a6 6 0 0 1 6.95 0 M12 20h.01'},
-  {id:'bar-chart',name:'Bar Chart',category:'data',tags:['graph','stats','analytics'],path:'M18 20V10 M12 20V4 M6 20v-6'},
-  {id:'pie-chart',name:'Pie Chart',category:'data',tags:['graph','stats','percentage'],path:'M21.21 15.89A10 10 0 1 1 8 2.83 M22 12A10 10 0 0 0 12 2v10z'},
-  {id:'trending-up',name:'Trending Up',category:'data',tags:['growth','increase','rise'],path:'M23 6l-9.5 9.5-5-5L1 18 M17 6h6v6'},
-  {id:'trending-down',name:'Trending Down',category:'data',tags:['decline','decrease','fall'],path:'M23 18l-9.5-9.5-5 5L1 6 M17 18h6v-6'},
-  {id:'database',name:'Database',category:'data',tags:['storage','server','sql'],path:'M12 2A9 3 0 1 0 12 8 9 3 0 0 0 12 2Z M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5'},
-  {id:'server',name:'Server',category:'data',tags:['hosting','backend','infrastructure'],path:'M2 3h20v6H2z M2 9h20v6H2z M2 15h20v6H2z M6 7h.01 M6 13h.01 M6 19h.01'},
-  {id:'cpu',name:'CPU',category:'data',tags:['processor','chip','hardware'],path:'M9 3H7a2 2 0 0 0-2 2v2m0 8v2a2 2 0 0 0 2 2h2m8-16h2a2 2 0 0 1 2 2v2m0 8v2a2 2 0 0 1-2 2h-2 M9 3v2 M15 3v2 M9 19v2 M15 19v2 M3 9h2 M3 15h2 M19 9h2 M19 15h2 M7 7h10v10H7z'},
-  {id:'activity',name:'Activity',category:'data',tags:['pulse','heartbeat','monitor'],path:'M22 12h-4l-3 9L9 3l-3 9H2'},
-  {id:'code',name:'Code',category:'data',tags:['programming','developer','terminal'],path:'M16 18l6-6-6-6 M8 6l-6 6 6 6'},
-  {id:'terminal',name:'Terminal',category:'data',tags:['command','cli','shell'],path:'M4 17l6-6-6-6 M12 19h8'},
-  {id:'sun',name:'Sun',category:'weather',tags:['sunny','clear','day','bright'],path:'M12 17A5 5 0 1 0 12 7a5 5 0 0 0 0 10z M12 1v2 M12 21v2 M4.22 4.22l1.42 1.42 M18.36 18.36l1.42 1.42 M1 12h2 M21 12h2 M4.22 19.78l1.42-1.42 M18.36 5.64l1.42-1.42'},
-  {id:'moon',name:'Moon',category:'weather',tags:['night','dark','sleep'],path:'M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z'},
-  {id:'cloud',name:'Cloud',category:'weather',tags:['cloudy','overcast','weather'],path:'M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z'},
-  {id:'cloud-rain',name:'Rain',category:'weather',tags:['rain','drizzle','wet','storm'],path:'M16 13v8 M8 13v8 M12 15v8 M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25'},
-  {id:'cloud-snow',name:'Snow',category:'weather',tags:['snow','winter','cold'],path:'M20 17.58A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25 M8 16h.01 M8 20h.01 M12 18h.01 M12 22h.01 M16 16h.01 M16 20h.01'},
-  {id:'wind',name:'Wind',category:'weather',tags:['breeze','air','gust'],path:'M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2'},
-  {id:'umbrella',name:'Umbrella',category:'weather',tags:['rain','protection','weather'],path:'M23 12a11.05 11.05 0 0 0-22 0zm-5 7a3 3 0 0 1-6 0v-7'},
-  {id:'thermometer',name:'Thermometer',category:'weather',tags:['temperature','heat','cold'],path:'M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z'},
-  {id:'lightning',name:'Lightning',category:'weather',tags:['thunder','bolt','storm','electric'],path:'M13 2L3 14h9l-1 8 10-12h-9l1-8z'},
-  {id:'eye',name:'Eye',category:'weather',tags:['visibility','see','view'],path:'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 15A3 3 0 1 0 12 9a3 3 0 0 0 0 6z'},
-  {id:'heart',name:'Heart',category:'objects',tags:['love','like','favorite'],path:'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'},
-  {id:'star',name:'Star',category:'objects',tags:['favorite','rating','bookmark'],path:'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z'},
-  {id:'bookmark',name:'Bookmark',category:'objects',tags:['save','favorite','mark'],path:'M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z'},
-  {id:'map-pin',name:'Map Pin',category:'objects',tags:['location','place','marker','gps'],path:'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z M12 10A3 3 0 1 0 12 4a3 3 0 0 0 0 6z'},
-  {id:'compass',name:'Compass',category:'objects',tags:['navigate','direction','north'],path:'M12 22A10 10 0 1 0 12 2a10 10 0 0 0 0 20z M16.24 7.76l-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z'},
-  {id:'key',name:'Key',category:'objects',tags:['access','unlock','password'],path:'M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4'},
-  {id:'gift',name:'Gift',category:'objects',tags:['present','birthday','package'],path:'M20 12v10H4V12 M22 7H2v5h20V7z M12 22V7 M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z'},
-  {id:'flag',name:'Flag',category:'objects',tags:['marker','country','report'],path:'M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z M4 22v-7'},
-  {id:'music',name:'Music',category:'objects',tags:['song','audio','melody'],path:'M9 18V5l12-2v13 M6 21A3 3 0 1 0 6 15a3 3 0 0 0 0 6z M18 19A3 3 0 1 0 18 13a3 3 0 0 0 0 6z'},
-  {id:'tool',name:'Tool',category:'objects',tags:['wrench','repair','fix'],path:'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z'},
-];
+  <!-- Generate Panel -->
+  <div class="gen-panel" id="gen-panel" onclick="closeGenerate(event)">
+    <div class="gen-box">
+      <button class="modal-close" onclick="closeGenerate()">✕</button>
+      <div class="gen-tag">✦ AI Icon Generator</div>
+      <h2>Request an icon.</h2>
+      <p class="gen-subtitle">Describe any icon and AI will design it as a crisp SVG path — then add it to the GLYPH
+        library so the whole community can use it.</p>
 
-// ===================== STATE =====================
-let currentCategory = 'all';
-let currentSearch = '';
-let selectedIcon = null;
-let currentTab = 'svg';
-let aiIcons = [];
-let pendingIcon = null;
+      <label class="field-label" for="gen-name">Icon name or description</label>
+      <input class="gen-input" id="gen-name" type="text" placeholder="e.g. fire, DNA helix, rocket, syringe..."
+        autocomplete="off">
 
-// ===================== STORAGE =====================
-async function loadAiIcons() {
-  try {
-    const r = await window.storage.get('glyph-ai-icons', true);
-    if (r && r.value) { aiIcons = JSON.parse(r.value); updateStats(); }
-  } catch(e) { aiIcons = []; }
-}
-async function saveAiIcons() {
-  try { await window.storage.set('glyph-ai-icons', JSON.stringify(aiIcons), true); } catch(e) {}
-}
+      <div class="gen-row">
+        <div style="flex:1">
+          <label class="field-label">Category</label>
+          <select class="gen-select" id="gen-category">
+            <option value="objects">Objects</option>
+            <option value="ui">UI</option>
+            <option value="media">Media</option>
+            <option value="files">Files</option>
+            <option value="arrows">Arrows</option>
+            <option value="comms">Comms</option>
+            <option value="data">Data</option>
+            <option value="weather">Weather</option>
+          </select>
+        </div>
+        <div style="flex:1">
+          <label class="field-label">Style</label>
+          <select class="gen-select" id="gen-style">
+            <option value="outline">Outline (default)</option>
+            <option value="minimal">Minimal / geometric</option>
+            <option value="detailed">Detailed</option>
+          </select>
+        </div>
+      </div>
 
-function findIcon(id) {
-  return BASE_ICONS.find(i=>i.id===id) || aiIcons.find(i=>i.id===id);
-}
+      <div class="gen-status" id="gen-status">
+        <div class="spinner"></div>
+        <span class="gen-status-txt" id="gen-status-txt">Designing icon with AI...</span>
+      </div>
 
-function getDisplayIcons() {
-  let pool = currentCategory === 'generated' ? aiIcons
-    : currentCategory === 'all' ? [...BASE_ICONS, ...aiIcons]
-    : [...BASE_ICONS.filter(i=>i.category===currentCategory), ...aiIcons.filter(i=>i.category===currentCategory)];
-  const q = currentSearch.toLowerCase();
-  if (!q) return pool;
-  return pool.filter(i => i.name.toLowerCase().includes(q) || i.id.includes(q) || (i.tags||[]).some(t=>t.includes(q)) || i.category.includes(q));
-}
+      <div class="gen-preview" id="gen-preview">
+        <div class="gen-preview-label">Preview</div>
+        <div class="gen-preview-row">
+          <div class="gen-preview-left">
+            <div class="gen-preview-main" id="gen-preview-main"></div>
+            <div class="gen-sizes" id="gen-sizes"></div>
+          </div>
+          <div class="gen-preview-right">
+            <div class="gen-preview-name" id="gen-preview-name"></div>
+            <div class="gen-preview-cat" id="gen-preview-cat"></div>
+            <div class="gen-tags" id="gen-tags"></div>
+          </div>
+        </div>
+      </div>
 
-function updateStats() {
-  document.getElementById('ai-count').textContent = aiIcons.length;
-  document.getElementById('total-count').textContent = BASE_ICONS.length + aiIcons.length;
-}
+      <div class="gen-actions">
+        <button class="btn gen" id="gen-add-btn" onclick="addGeneratedIcon()" style="display:none">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          Add to Library
+        </button>
+        <button class="btn" id="gen-retry-btn" onclick="retryGenerate()" style="display:none">↺ Regenerate</button>
+        <button class="btn primary" id="gen-submit-btn" onclick="generateIcon()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polygon
+              points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+          </svg>
+          Generate Icon
+        </button>
+      </div>
+    </div>
+  </div>
 
-// ===================== RENDER =====================
-function makeSvg(icon, size=24) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">\n  <path d="${icon.path}"/>\n</svg>`;
-}
+  <!-- API Docs Panel -->
+  <div class="api-panel" id="api-panel" onclick="closeApi(event)">
+    <div class="api-box">
+      <button class="modal-close" onclick="closeApi()">✕</button>
+      <h2>API Reference</h2>
+      <p class="subtitle">GLYPH exposes a static JSON API for programmatic access. AI agents can fetch, filter, and
+        generate icons.</p>
+      <div class="endpoint">
+        <div class="endpoint-header"><span class="method">GET</span><span class="endpoint-path">/api/icons.json</span>
+        </div>
+        <p class="endpoint-desc">All icons including community AI-generated ones with full metadata.</p>
+        <div class="code-block">fetch('/api/icons.json').then(r => r.json()).then(({ icons }) => {
+          // icons: [{ id, name, category, tags, path, svg, generated }]
+          });</div>
+      </div>
+      <div class="endpoint">
+        <div class="endpoint-header"><span class="method">GET</span><span
+            class="endpoint-path">/api/icons.json?category=objects</span></div>
+        <p class="endpoint-desc">Filter by category: ui, media, files, arrows, comms, data, weather, objects, generated.
+        </p>
+        <div class="code-block">const { icons } = await fetch('/api/icons.json?category=objects').then(r=>r.json());
+        </div>
+      </div>
+      <div class="endpoint">
+        <div class="endpoint-header"><span class="method">POST</span><span class="endpoint-path">/api/generate</span>
+        </div>
+        <p class="endpoint-desc">Generate a new icon via AI and add it to the shared library immediately.</p>
+        <div class="code-block">const { icon } = await fetch('/api/generate', {
+          method: 'POST',
+          body: JSON.stringify({ name: 'fire', category: 'objects', style: 'outline' })
+          }).then(r => r.json());
+          // icon.path, icon.svg, icon.tags, icon.id</div>
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:24px;margin-top:8px;">
+        <div class="endpoint-header" style="margin-bottom:12px;"><span class="method"
+            style="background:var(--gen)">AI</span><span class="endpoint-path">Agent Tool Example</span></div>
+        <div class="code-block">// Tool: get_or_generate_icon
+          async function get_or_generate_icon({ name, category }) {
+          const { icons } = await fetch('/api/icons.json').then(r=>r.json());
+          const match = icons.find(i =>
+          i.id === name.toLowerCase() ||
+          i.name.toLowerCase() === name.toLowerCase()
+          );
+          if (match) return match; // Found in library
+          // Not found — generate it
+          return fetch('/api/generate', {
+          method: 'POST',
+          body: JSON.stringify({ name, category })
+          }).then(r => r.json()).then(d => d.icon);
+          }</div>
+      </div>
+      <div class="modal-actions" style="margin-top:24px;">
+        <button class="btn primary" onclick="exportAllJson()">Export icons.json</button>
+        <button class="btn" onclick="closeApi()">Close</button>
+      </div>
+    </div>
+  </div>
 
-function renderGrid() {
-  const filtered = getDisplayIcons();
-  const grid = document.getElementById('icon-grid');
-  const nr = document.getElementById('no-results');
-  const lbl = document.getElementById('ai-section-label');
-  const countLbl = document.getElementById('count-label');
+  <script>
+    // ===================== ICON DATA =====================
+    const BASE_ICONS = [
+      { id: 'home', name: 'Home', category: 'ui', tags: ['house', 'main'], path: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10' },
+      { id: 'settings', name: 'Settings', category: 'ui', tags: ['gear', 'config', 'cog'], path: 'M12 15A3 3 0 1 0 12 9 3 3 0 0 0 12 15Z M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z' },
+      { id: 'user', name: 'User', category: 'ui', tags: ['person', 'account', 'avatar'], path: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 3A4 4 0 1 0 12 11 4 4 0 0 0 12 3Z' },
+      { id: 'menu', name: 'Menu', category: 'ui', tags: ['hamburger', 'nav', 'sidebar'], path: 'M3 12h18 M3 6h18 M3 18h18' },
+      { id: 'close', name: 'Close', category: 'ui', tags: ['x', 'cancel', 'dismiss'], path: 'M18 6L6 18 M6 6l12 12' },
+      { id: 'search', name: 'Search', category: 'ui', tags: ['find', 'magnify', 'look'], path: 'M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13z M21 21l-4.5-4.5' },
+      { id: 'plus', name: 'Plus', category: 'ui', tags: ['add', 'create', 'new'], path: 'M12 5v14 M5 12h14' },
+      { id: 'minus', name: 'Minus', category: 'ui', tags: ['remove', 'delete', 'subtract'], path: 'M5 12h14' },
+      { id: 'check', name: 'Check', category: 'ui', tags: ['tick', 'done', 'success', 'verify'], path: 'M20 6L9 17l-5-5' },
+      { id: 'info', name: 'Info', category: 'ui', tags: ['information', 'help', 'tooltip'], path: 'M12 22A10 10 0 1 0 12 2a10 10 0 0 0 0 20z M12 16v-4 M12 8h.01' },
+      { id: 'alert', name: 'Alert', category: 'ui', tags: ['warning', 'danger', 'caution'], path: 'M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z M12 9v4 M12 17h.01' },
+      { id: 'lock', name: 'Lock', category: 'ui', tags: ['secure', 'password', 'private'], path: 'M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2z M7 11V7a5 5 0 0 1 10 0v4' },
+      { id: 'play', name: 'Play', category: 'media', tags: ['start', 'video', 'audio'], path: 'M5 3l14 9-14 9V3z' },
+      { id: 'pause', name: 'Pause', category: 'media', tags: ['stop', 'media'], path: 'M6 4h4v16H6z M14 4h4v16h-4z' },
+      { id: 'skip-forward', name: 'Skip Forward', category: 'media', tags: ['next', 'fast-forward'], path: 'M5 4l10 8-10 8V4z M19 5v14' },
+      { id: 'skip-back', name: 'Skip Back', category: 'media', tags: ['previous', 'rewind'], path: 'M19 20L9 12l10-8v16z M5 19V5' },
+      { id: 'volume', name: 'Volume', category: 'media', tags: ['sound', 'speaker', 'audio'], path: 'M11 5L6 9H2v6h4l5 4V5z M19.07 4.93a10 10 0 0 1 0 14.14 M15.54 8.46a5 5 0 0 1 0 7.07' },
+      { id: 'mute', name: 'Mute', category: 'media', tags: ['volume-off', 'silent', 'no-sound'], path: 'M11 5L6 9H2v6h4l5 4V5z M23 9l-6 6 M17 9l6 6' },
+      { id: 'camera', name: 'Camera', category: 'media', tags: ['photo', 'picture', 'image'], path: 'M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z M12 17A4 4 0 1 0 12 9a4 4 0 0 0 0 8z' },
+      { id: 'mic', name: 'Mic', category: 'media', tags: ['microphone', 'record', 'voice'], path: 'M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z M19 10v2a7 7 0 0 1-14 0v-2 M12 19v4 M8 23h8' },
+      { id: 'film', name: 'Film', category: 'media', tags: ['movie', 'cinema', 'video'], path: 'M1 4h22v16H1z M7 4v16 M17 4v16 M1 12h22 M7 8H1 M7 16H1 M23 8h-6 M23 16h-6' },
+      { id: 'image', name: 'Image', category: 'media', tags: ['photo', 'picture', 'gallery'], path: 'M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14l5-3 3 2 3-2 5 3z M8.5 10A1.5 1.5 0 1 0 8.5 7 1.5 1.5 0 0 0 8.5 10z' },
+      { id: 'file', name: 'File', category: 'files', tags: ['document', 'paper'], path: 'M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z M13 2v7h7' },
+      { id: 'folder', name: 'Folder', category: 'files', tags: ['directory', 'storage'], path: 'M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z' },
+      { id: 'folder-open', name: 'Folder Open', category: 'files', tags: ['open', 'directory'], path: 'M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z M2 11h20' },
+      { id: 'upload', name: 'Upload', category: 'files', tags: ['send', 'export', 'cloud'], path: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M17 8l-5-5-5 5 M12 3v12' },
+      { id: 'download', name: 'Download', category: 'files', tags: ['save', 'import', 'receive'], path: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M7 10l5 5 5-5 M12 15V3' },
+      { id: 'trash', name: 'Trash', category: 'files', tags: ['delete', 'remove', 'bin'], path: 'M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2' },
+      { id: 'copy', name: 'Copy', category: 'files', tags: ['duplicate', 'clipboard'], path: 'M20 9H11a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V11a2 2 0 0 0-2-2z M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1' },
+      { id: 'paperclip', name: 'Paperclip', category: 'files', tags: ['attach', 'attachment'], path: 'M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48' },
+      { id: 'archive', name: 'Archive', category: 'files', tags: ['box', 'store', 'save'], path: 'M21 8v13H3V8 M1 3h22v5H1z M10 12h4' },
+      { id: 'clipboard', name: 'Clipboard', category: 'files', tags: ['paste', 'tasks', 'list'], path: 'M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2 M9 2h6a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z' },
+      { id: 'arrow-right', name: 'Arrow Right', category: 'arrows', tags: ['next', 'forward'], path: 'M5 12h14 M12 5l7 7-7 7' },
+      { id: 'arrow-left', name: 'Arrow Left', category: 'arrows', tags: ['back', 'previous'], path: 'M19 12H5 M12 19l-7-7 7-7' },
+      { id: 'arrow-up', name: 'Arrow Up', category: 'arrows', tags: ['top', 'ascend'], path: 'M12 19V5 M5 12l7-7 7 7' },
+      { id: 'arrow-down', name: 'Arrow Down', category: 'arrows', tags: ['bottom', 'descend'], path: 'M12 5v14 M19 12l-7 7-7-7' },
+      { id: 'chevron-right', name: 'Chevron Right', category: 'arrows', tags: ['next', 'angle'], path: 'M9 18l6-6-6-6' },
+      { id: 'chevron-left', name: 'Chevron Left', category: 'arrows', tags: ['back', 'angle'], path: 'M15 18l-6-6 6-6' },
+      { id: 'chevron-up', name: 'Chevron Up', category: 'arrows', tags: ['top', 'angle'], path: 'M18 15l-6-6-6 6' },
+      { id: 'chevron-down', name: 'Chevron Down', category: 'arrows', tags: ['bottom', 'angle'], path: 'M6 9l6 6 6-6' },
+      { id: 'refresh', name: 'Refresh', category: 'arrows', tags: ['reload', 'sync', 'loop'], path: 'M1 4v6h6 M23 20v-6h-6 M20.49 9A9 9 0 0 0 5.64 5.64L1 10 M23 14l-4.64 4.36A9 9 0 0 1 3.51 15' },
+      { id: 'corner-up-right', name: 'Corner Up Right', category: 'arrows', tags: ['redirect', 'turn'], path: 'M15 14l5-5-5-5 M4 20v-7a4 4 0 0 1 4-4h12' },
+      { id: 'repeat', name: 'Repeat', category: 'arrows', tags: ['loop', 'cycle'], path: 'M17 1l4 4-4 4 M3 11V9a4 4 0 0 1 4-4h14 M7 23l-4-4 4-4 M21 13v2a4 4 0 0 1-4 4H3' },
+      { id: 'shuffle', name: 'Shuffle', category: 'arrows', tags: ['random', 'mix'], path: 'M16 3h5v5 M4 20L21 3 M21 16v5h-5 M15 15l6 6 M4 4l5 5' },
+      { id: 'mail', name: 'Mail', category: 'comms', tags: ['email', 'envelope', 'message'], path: 'M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z M22 6l-10 7L2 6' },
+      { id: 'message', name: 'Message', category: 'comms', tags: ['chat', 'bubble', 'talk'], path: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 0 2 2z' },
+      { id: 'phone', name: 'Phone', category: 'comms', tags: ['call', 'contact', 'ring'], path: 'M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.41 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.94-.94a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z' },
+      { id: 'bell', name: 'Bell', category: 'comms', tags: ['notification', 'alert', 'ring'], path: 'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 0 1-3.46 0' },
+      { id: 'send', name: 'Send', category: 'comms', tags: ['submit', 'share', 'post'], path: 'M22 2L11 13 M22 2L15 22 9 13 2 9l20-7z' },
+      { id: 'rss', name: 'RSS', category: 'comms', tags: ['feed', 'subscribe', 'blog'], path: 'M4 11a9 9 0 0 1 9 9 M4 4a16 16 0 0 1 16 16 M5 19A1 1 0 1 0 5 17a1 1 0 0 0 0 2z' },
+      { id: 'share', name: 'Share', category: 'comms', tags: ['social', 'distribute', 'spread'], path: 'M18 8A3 3 0 1 0 18 2a3 3 0 0 0 0 6z M6 15A3 3 0 1 0 6 9a3 3 0 0 0 0 6z M18 22A3 3 0 1 0 18 16a3 3 0 0 0 0 6z M8.59 13.51l6.83 3.98 M15.41 6.51l-6.82 3.98' },
+      { id: 'wifi', name: 'WiFi', category: 'comms', tags: ['wireless', 'internet', 'network'], path: 'M5 12.55a11 11 0 0 1 14.08 0 M1.42 9a16 16 0 0 1 21.16 0 M8.53 16.11a6 6 0 0 1 6.95 0 M12 20h.01' },
+      { id: 'bar-chart', name: 'Bar Chart', category: 'data', tags: ['graph', 'stats', 'analytics'], path: 'M18 20V10 M12 20V4 M6 20v-6' },
+      { id: 'pie-chart', name: 'Pie Chart', category: 'data', tags: ['graph', 'stats', 'percentage'], path: 'M21.21 15.89A10 10 0 1 1 8 2.83 M22 12A10 10 0 0 0 12 2v10z' },
+      { id: 'trending-up', name: 'Trending Up', category: 'data', tags: ['growth', 'increase', 'rise'], path: 'M23 6l-9.5 9.5-5-5L1 18 M17 6h6v6' },
+      { id: 'trending-down', name: 'Trending Down', category: 'data', tags: ['decline', 'decrease', 'fall'], path: 'M23 18l-9.5-9.5-5 5L1 6 M17 18h6v-6' },
+      { id: 'database', name: 'Database', category: 'data', tags: ['storage', 'server', 'sql'], path: 'M12 2A9 3 0 1 0 12 8 9 3 0 0 0 12 2Z M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5' },
+      { id: 'server', name: 'Server', category: 'data', tags: ['hosting', 'backend', 'infrastructure'], path: 'M2 3h20v6H2z M2 9h20v6H2z M2 15h20v6H2z M6 7h.01 M6 13h.01 M6 19h.01' },
+      { id: 'cpu', name: 'CPU', category: 'data', tags: ['processor', 'chip', 'hardware'], path: 'M9 3H7a2 2 0 0 0-2 2v2m0 8v2a2 2 0 0 0 2 2h2m8-16h2a2 2 0 0 1 2 2v2m0 8v2a2 2 0 0 1-2 2h-2 M9 3v2 M15 3v2 M9 19v2 M15 19v2 M3 9h2 M3 15h2 M19 9h2 M19 15h2 M7 7h10v10H7z' },
+      { id: 'activity', name: 'Activity', category: 'data', tags: ['pulse', 'heartbeat', 'monitor'], path: 'M22 12h-4l-3 9L9 3l-3 9H2' },
+      { id: 'code', name: 'Code', category: 'data', tags: ['programming', 'developer', 'terminal'], path: 'M16 18l6-6-6-6 M8 6l-6 6 6 6' },
+      { id: 'terminal', name: 'Terminal', category: 'data', tags: ['command', 'cli', 'shell'], path: 'M4 17l6-6-6-6 M12 19h8' },
+      { id: 'sun', name: 'Sun', category: 'weather', tags: ['sunny', 'clear', 'day', 'bright'], path: 'M12 17A5 5 0 1 0 12 7a5 5 0 0 0 0 10z M12 1v2 M12 21v2 M4.22 4.22l1.42 1.42 M18.36 18.36l1.42 1.42 M1 12h2 M21 12h2 M4.22 19.78l1.42-1.42 M18.36 5.64l1.42-1.42' },
+      { id: 'moon', name: 'Moon', category: 'weather', tags: ['night', 'dark', 'sleep'], path: 'M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z' },
+      { id: 'cloud', name: 'Cloud', category: 'weather', tags: ['cloudy', 'overcast', 'weather'], path: 'M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z' },
+      { id: 'cloud-rain', name: 'Rain', category: 'weather', tags: ['rain', 'drizzle', 'wet', 'storm'], path: 'M16 13v8 M8 13v8 M12 15v8 M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25' },
+      { id: 'cloud-snow', name: 'Snow', category: 'weather', tags: ['snow', 'winter', 'cold'], path: 'M20 17.58A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25 M8 16h.01 M8 20h.01 M12 18h.01 M12 22h.01 M16 16h.01 M16 20h.01' },
+      { id: 'wind', name: 'Wind', category: 'weather', tags: ['breeze', 'air', 'gust'], path: 'M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2' },
+      { id: 'umbrella', name: 'Umbrella', category: 'weather', tags: ['rain', 'protection', 'weather'], path: 'M23 12a11.05 11.05 0 0 0-22 0zm-5 7a3 3 0 0 1-6 0v-7' },
+      { id: 'thermometer', name: 'Thermometer', category: 'weather', tags: ['temperature', 'heat', 'cold'], path: 'M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z' },
+      { id: 'lightning', name: 'Lightning', category: 'weather', tags: ['thunder', 'bolt', 'storm', 'electric'], path: 'M13 2L3 14h9l-1 8 10-12h-9l1-8z' },
+      { id: 'eye', name: 'Eye', category: 'weather', tags: ['visibility', 'see', 'view'], path: 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 15A3 3 0 1 0 12 9a3 3 0 0 0 0 6z' },
+      { id: 'heart', name: 'Heart', category: 'objects', tags: ['love', 'like', 'favorite'], path: 'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z' },
+      { id: 'star', name: 'Star', category: 'objects', tags: ['favorite', 'rating', 'bookmark'], path: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z' },
+      { id: 'bookmark', name: 'Bookmark', category: 'objects', tags: ['save', 'favorite', 'mark'], path: 'M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z' },
+      { id: 'map-pin', name: 'Map Pin', category: 'objects', tags: ['location', 'place', 'marker', 'gps'], path: 'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z M12 10A3 3 0 1 0 12 4a3 3 0 0 0 0 6z' },
+      { id: 'compass', name: 'Compass', category: 'objects', tags: ['navigate', 'direction', 'north'], path: 'M12 22A10 10 0 1 0 12 2a10 10 0 0 0 0 20z M16.24 7.76l-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z' },
+      { id: 'key', name: 'Key', category: 'objects', tags: ['access', 'unlock', 'password'], path: 'M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4' },
+      { id: 'gift', name: 'Gift', category: 'objects', tags: ['present', 'birthday', 'package'], path: 'M20 12v10H4V12 M22 7H2v5h20V7z M12 22V7 M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z' },
+      { id: 'flag', name: 'Flag', category: 'objects', tags: ['marker', 'country', 'report'], path: 'M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z M4 22v-7' },
+      { id: 'music', name: 'Music', category: 'objects', tags: ['song', 'audio', 'melody'], path: 'M9 18V5l12-2v13 M6 21A3 3 0 1 0 6 15a3 3 0 0 0 0 6z M18 19A3 3 0 1 0 18 13a3 3 0 0 0 0 6z' },
+      { id: 'tool', name: 'Tool', category: 'objects', tags: ['wrench', 'repair', 'fix'], path: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z' },
+    ];
 
-  countLbl.textContent = `${filtered.length} icon${filtered.length!==1?'s':''}`;
+    // ===================== STATE =====================
+    let currentCategory = 'all';
+    let currentSearch = '';
+    let selectedIcon = null;
+    let currentTab = 'svg';
+    let aiIcons = [];
+    let pendingIcon = null;
 
-  const hasAI = filtered.some(i=>i.generated);
-  lbl.classList.toggle('visible', hasAI && currentCategory!=='generated');
+    // ===================== STORAGE =====================
+    async function loadAiIcons() {
+      try {
+        const r = await window.storage.get('glyph-ai-icons', true);
+        if (r && r.value) { aiIcons = JSON.parse(r.value); updateStats(); }
+      } catch (e) { aiIcons = []; }
+    }
+    async function saveAiIcons() {
+      try { await window.storage.set('glyph-ai-icons', JSON.stringify(aiIcons), true); } catch (e) { }
+    }
 
-  if (!filtered.length) {
-    grid.innerHTML = '';
-    nr.style.display = 'block';
-    document.getElementById('no-results-term').textContent = currentSearch;
-    return;
-  }
-  nr.style.display = 'none';
+    function findIcon(id) {
+      return BASE_ICONS.find(i => i.id === id) || aiIcons.find(i => i.id === id);
+    }
 
-  // Base icons first, then AI
-  const sorted = [...filtered].sort((a,b) => (a.generated?1:0)-(b.generated?1:0));
-  grid.innerHTML = sorted.map((ic,i) => `
-    <div class="icon-card${ic.generated?' ai-gen':''}" onclick="openModal('${ic.id}')" style="animation-delay:${Math.min(i,40)*14}ms">
-      ${ic.generated?'<span class="ai-badge">AI</span>':''}
+    function getDisplayIcons() {
+      let pool = currentCategory === 'generated' ? aiIcons
+        : currentCategory === 'all' ? [...BASE_ICONS, ...aiIcons]
+          : [...BASE_ICONS.filter(i => i.category === currentCategory), ...aiIcons.filter(i => i.category === currentCategory)];
+      const q = currentSearch.toLowerCase();
+      if (!q) return pool;
+      return pool.filter(i => i.name.toLowerCase().includes(q) || i.id.includes(q) || (i.tags || []).some(t => t.includes(q)) || i.category.includes(q));
+    }
+
+    function updateStats() {
+      document.getElementById('ai-count').textContent = aiIcons.length;
+      document.getElementById('total-count').textContent = BASE_ICONS.length + aiIcons.length;
+    }
+
+    // ===================== RENDER =====================
+    function makeSvg(icon, size = 24) {
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">\n  <path d="${icon.path}"/>\n</svg>`;
+    }
+
+    function renderGrid() {
+      const filtered = getDisplayIcons();
+      const grid = document.getElementById('icon-grid');
+      const nr = document.getElementById('no-results');
+      const lbl = document.getElementById('ai-section-label');
+      const countLbl = document.getElementById('count-label');
+
+      countLbl.textContent = `${filtered.length} icon${filtered.length !== 1 ? 's' : ''}`;
+
+      const hasAI = filtered.some(i => i.generated);
+      lbl.classList.toggle('visible', hasAI && currentCategory !== 'generated');
+
+      if (!filtered.length) {
+        grid.innerHTML = '';
+        nr.style.display = 'block';
+        document.getElementById('no-results-term').textContent = currentSearch;
+        return;
+      }
+      nr.style.display = 'none';
+
+      // Base icons first, then AI
+      const sorted = [...filtered].sort((a, b) => (a.generated ? 1 : 0) - (b.generated ? 1 : 0));
+      grid.innerHTML = sorted.map((ic, i) => `
+    <div class="icon-card${ic.generated ? ' ai-gen' : ''}" onclick="openModal('${ic.id}')" style="animation-delay:${Math.min(i, 40) * 14}ms">
+      ${ic.generated ? '<span class="ai-badge">AI</span>' : ''}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="${ic.path}"/></svg>
       <span class="icon-name">${ic.name}</span>
       <div class="copy-flash">Copied!</div>
     </div>`).join('');
-}
-
-// ===================== FILTER =====================
-function setCategory(cat, btn) {
-  currentCategory = cat;
-  document.querySelectorAll('.filter-tab').forEach(b => { b.classList.remove('active'); b.style.background=''; b.style.borderColor=''; b.style.color=''; });
-  btn.classList.add('active');
-  if (cat === 'generated') { btn.style.background='var(--gen)'; btn.style.borderColor='var(--gen)'; btn.style.color='#000'; }
-  renderGrid();
-}
-function filterIcons() { currentSearch = document.getElementById('search').value; renderGrid(); }
-
-// ===================== DETAIL MODAL =====================
-function openModal(id) {
-  const icon = findIcon(id);
-  if (!icon) return;
-  selectedIcon = icon; currentTab = 'svg';
-  document.getElementById('modal-preview').innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="${icon.path}"/></svg>`;
-  document.getElementById('modal-title').textContent = icon.name;
-  document.getElementById('modal-cat').textContent = (icon.generated?'✦ AI · ':'')+icon.category.toUpperCase();
-  document.querySelectorAll('.modal-tab').forEach((t,i)=>t.classList.toggle('active',i===0));
-  updateCode();
-  document.getElementById('modal-overlay').classList.add('open');
-}
-function closeModal(e) {
-  if (e && e.target!==document.getElementById('modal-overlay') && !e.target.classList.contains('modal-close')) return;
-  document.getElementById('modal-overlay').classList.remove('open'); selectedIcon=null;
-}
-function switchTab(tab,btn) { currentTab=tab; document.querySelectorAll('.modal-tab').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); updateCode(); }
-function updateCode() {
-  const ic = selectedIcon; if(!ic) return;
-  const el = document.getElementById('modal-code');
-  if (currentTab==='svg') el.textContent = makeSvg(ic);
-  else if (currentTab==='jsx') el.textContent = `export function ${ic.name.replace(/\s+/g,'')}Icon({ size=24, color='currentColor', ...props }) {\n  return (\n    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size}\n      viewBox="0 0 24 24" fill="none" stroke={color}\n      strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" {...props}>\n      <path d="${ic.path}" />\n    </svg>\n  );\n}`;
-  else if (currentTab==='json') el.textContent = JSON.stringify({id:ic.id,name:ic.name,category:ic.category,tags:ic.tags,path:ic.path,svg:makeSvg(ic),viewBox:'0 0 24 24',strokeWidth:1.5,license:'MIT',generated:ic.generated||false},null,2);
-  else el.textContent = `data:image/svg+xml;base64,${btoa(makeSvg(ic))}`;
-}
-function copyModalCode() {
-  navigator.clipboard.writeText(document.getElementById('modal-code').textContent).then(()=>{
-    const btn = document.querySelector('.modal-actions .btn.primary');
-    btn.textContent='Copied!'; setTimeout(()=>{btn.textContent='Copy Code';},1500);
-  });
-}
-function downloadIcon() {
-  if (!selectedIcon) return;
-  const blob = new Blob([makeSvg(selectedIcon)],{type:'image/svg+xml'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href=url; a.download=`${selectedIcon.id}.svg`; a.click();
-  URL.revokeObjectURL(url);
-}
-
-// ===================== GENERATE =====================
-function openGenerate(prefill) {
-  resetGen();
-  document.getElementById('gen-panel').classList.add('open');
-  const inp = document.getElementById('gen-name');
-  inp.value = prefill || '';
-  setTimeout(()=>inp.focus(), 300);
-}
-function openGenerateWithTerm() { openGenerate(currentSearch); }
-function closeGenerate(e) {
-  if (e && e.target!==document.getElementById('gen-panel') && !e.target.classList.contains('modal-close')) return;
-  document.getElementById('gen-panel').classList.remove('open');
-}
-function resetGen() {
-  document.getElementById('gen-status').classList.remove('vis');
-  document.getElementById('gen-preview').classList.remove('vis');
-  document.getElementById('gen-add-btn').style.display='none';
-  document.getElementById('gen-retry-btn').style.display='none';
-  document.getElementById('gen-submit-btn').style.display='';
-  pendingIcon=null;
-}
-
-
-// ===================== AI GENERATION (via serverless proxy) =====================
-// The Anthropic API key lives ONLY in Vercel's environment variables.
-// This HTML never touches the key — it calls /api/generate on your own server.
-
-async function generateIcon() {
-  const name = document.getElementById('gen-name').value.trim();
-  if (!name) { document.getElementById('gen-name').focus(); return; }
-
-  const category = document.getElementById('gen-category').value;
-  const style    = document.getElementById('gen-style').value;
-  const slug     = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-
-  if (findIcon(slug)) { showToast(`"${name}" already exists in the library!`); return; }
-
-  // UI: enter loading state
-  document.getElementById('gen-submit-btn').style.display = 'none';
-  document.getElementById('gen-add-btn').style.display    = 'none';
-  document.getElementById('gen-retry-btn').style.display  = 'none';
-  document.getElementById('gen-preview').classList.remove('vis');
-  document.getElementById('gen-status-txt').textContent   = 'AI is designing your icon…';
-  document.getElementById('gen-status').classList.add('vis');
-
-  try {
-    const resp = await fetch('/api/generate', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ name, category, style }),
-    });
-
-    if (!resp.ok) {
-      let msg = 'Generation failed — please try again.';
-      try { const e = await resp.json(); if (e.error) msg = e.error; } catch(_) {}
-      throw new Error(msg);
     }
 
-    const { icon } = await resp.json();
-    if (!icon || !icon.path) throw new Error('Invalid response from server.');
+    // ===================== FILTER =====================
+    function setCategory(cat, btn) {
+      currentCategory = cat;
+      document.querySelectorAll('.filter-tab').forEach(b => { b.classList.remove('active'); b.style.background = ''; b.style.borderColor = ''; b.style.color = ''; });
+      btn.classList.add('active');
+      if (cat === 'generated') { btn.style.background = 'var(--gen)'; btn.style.borderColor = 'var(--gen)'; btn.style.color = '#000'; }
+      renderGrid();
+    }
+    function filterIcons() { currentSearch = document.getElementById('search').value; renderGrid(); }
 
-    pendingIcon = icon;
+    // ===================== DETAIL MODAL =====================
+    function openModal(id) {
+      const icon = findIcon(id);
+      if (!icon) return;
+      selectedIcon = icon; currentTab = 'svg';
+      document.getElementById('modal-preview').innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="${icon.path}"/></svg>`;
+      document.getElementById('modal-title').textContent = icon.name;
+      document.getElementById('modal-cat').textContent = (icon.generated ? '✦ AI · ' : '') + icon.category.toUpperCase();
+      document.querySelectorAll('.modal-tab').forEach((t, i) => t.classList.toggle('active', i === 0));
+      updateCode();
+      document.getElementById('modal-overlay').classList.add('open');
+    }
+    function closeModal(e) {
+      if (e && e.target !== document.getElementById('modal-overlay') && !e.target.classList.contains('modal-close')) return;
+      document.getElementById('modal-overlay').classList.remove('open'); selectedIcon = null;
+    }
+    function switchTab(tab, btn) { currentTab = tab; document.querySelectorAll('.modal-tab').forEach(b => b.classList.remove('active')); btn.classList.add('active'); updateCode(); }
+    function updateCode() {
+      const ic = selectedIcon; if (!ic) return;
+      const el = document.getElementById('modal-code');
+      if (currentTab === 'svg') el.textContent = makeSvg(ic);
+      else if (currentTab === 'jsx') el.textContent = `export function ${ic.name.replace(/\s+/g, '')}Icon({ size=24, color='currentColor', ...props }) {\n  return (\n    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size}\n      viewBox="0 0 24 24" fill="none" stroke={color}\n      strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" {...props}>\n      <path d="${ic.path}" />\n    </svg>\n  );\n}`;
+      else if (currentTab === 'json') el.textContent = JSON.stringify({ id: ic.id, name: ic.name, category: ic.category, tags: ic.tags, path: ic.path, svg: makeSvg(ic), viewBox: '0 0 24 24', strokeWidth: 1.5, license: 'MIT', generated: ic.generated || false }, null, 2);
+      else el.textContent = `data:image/svg+xml;base64,${btoa(makeSvg(ic))}`;
+    }
+    function copyModalCode() {
+      navigator.clipboard.writeText(document.getElementById('modal-code').textContent).then(() => {
+        const btn = document.querySelector('.modal-actions .btn.primary');
+        btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Copy Code'; }, 1500);
+      });
+    }
+    function downloadIcon() {
+      if (!selectedIcon) return;
+      const blob = new Blob([makeSvg(selectedIcon)], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = `${selectedIcon.id}.svg`; a.click();
+      URL.revokeObjectURL(url);
+    }
 
-    // Show preview
-    document.getElementById('gen-status').classList.remove('vis');
-    document.getElementById('gen-preview-main').innerHTML =
-      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+    // ===================== GENERATE =====================
+    function openGenerate(prefill) {
+      resetGen();
+      document.getElementById('gen-panel').classList.add('open');
+      const inp = document.getElementById('gen-name');
+      inp.value = prefill || '';
+      setTimeout(() => inp.focus(), 300);
+    }
+    function openGenerateWithTerm() { openGenerate(currentSearch); }
+    function closeGenerate(e) {
+      if (e && e.target !== document.getElementById('gen-panel') && !e.target.classList.contains('modal-close')) return;
+      document.getElementById('gen-panel').classList.remove('open');
+    }
+    function resetGen() {
+      document.getElementById('gen-status').classList.remove('vis');
+      document.getElementById('gen-preview').classList.remove('vis');
+      document.getElementById('gen-add-btn').style.display = 'none';
+      document.getElementById('gen-retry-btn').style.display = 'none';
+      document.getElementById('gen-submit-btn').style.display = '';
+      pendingIcon = null;
+    }
+
+
+    // ===================== AI GENERATION (via serverless proxy) =====================
+    // The Anthropic API key lives ONLY in Vercel's environment variables.
+    // This HTML never touches the key — it calls /api/generate on your own server.
+
+    async function generateIcon() {
+      const name = document.getElementById('gen-name').value.trim();
+      if (!name) { document.getElementById('gen-name').focus(); return; }
+
+      const category = document.getElementById('gen-category').value;
+      const style = document.getElementById('gen-style').value;
+      const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+
+      if (findIcon(slug)) { showToast(`"${name}" already exists in the library!`); return; }
+
+      // UI: enter loading state
+      document.getElementById('gen-submit-btn').style.display = 'none';
+      document.getElementById('gen-add-btn').style.display = 'none';
+      document.getElementById('gen-retry-btn').style.display = 'none';
+      document.getElementById('gen-preview').classList.remove('vis');
+      document.getElementById('gen-status-txt').textContent = 'AI is designing your icon…';
+      document.getElementById('gen-status').classList.add('vis');
+
+      try {
+        const resp = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, category, style }),
+        });
+
+        if (!resp.ok) {
+          let msg = 'Generation failed — please try again.';
+          try { const e = await resp.json(); if (e.error) msg = e.error; } catch (_) { }
+          throw new Error(msg);
+        }
+
+        const { icon } = await resp.json();
+        if (!icon || !icon.path) throw new Error('Invalid response from server.');
+
+        pendingIcon = icon;
+
+        // Show preview
+        document.getElementById('gen-status').classList.remove('vis');
+        document.getElementById('gen-preview-main').innerHTML =
+          `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
         stroke-linecap="round" stroke-linejoin="round">
         <path d="${icon.path}"/>
       </svg>`;
-    document.getElementById('gen-preview-name').textContent = icon.name;
-    document.getElementById('gen-preview-cat').textContent  = icon.category.toUpperCase();
-    document.getElementById('gen-tags').innerHTML =
-      (icon.tags || []).map(t => `<span class="gen-tag-pill">${t}</span>`).join('');
+        document.getElementById('gen-preview-name').textContent = icon.name;
+        document.getElementById('gen-preview-cat').textContent = icon.category.toUpperCase();
+        document.getElementById('gen-tags').innerHTML =
+          (icon.tags || []).map(t => `<span class="gen-tag-pill">${t}</span>`).join('');
 
-    // Multi-size swatch
-    document.getElementById('gen-sizes').innerHTML =
-      [16, 20, 28].map(s =>
-        `<div class="sz-box" style="width:${s+8}px;height:${s+8}px">
+        // Multi-size swatch
+        document.getElementById('gen-sizes').innerHTML =
+          [16, 20, 28].map(s =>
+            `<div class="sz-box" style="width:${s + 8}px;height:${s + 8}px">
            <svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor"
              stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
              <path d="${icon.path}"/>
            </svg>
          </div>`
-      ).join('') +
-      `<span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-left:6px">px sizes</span>`;
+          ).join('') +
+          `<span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-left:6px">px sizes</span>`;
 
-    document.getElementById('gen-preview').classList.add('vis');
-    document.getElementById('gen-add-btn').style.display   = '';
-    document.getElementById('gen-retry-btn').style.display = '';
+        document.getElementById('gen-preview').classList.add('vis');
+        document.getElementById('gen-add-btn').style.display = '';
+        document.getElementById('gen-retry-btn').style.display = '';
 
-  } catch (err) {
-    document.getElementById('gen-status').classList.remove('vis');
-    document.getElementById('gen-submit-btn').style.display = '';
-    showToast(err.message || 'Generation failed — please try again.');
-    console.error('generateIcon error:', err);
-  }
-}
+      } catch (err) {
+        document.getElementById('gen-status').classList.remove('vis');
+        document.getElementById('gen-submit-btn').style.display = '';
+        showToast(err.message || 'Generation failed — please try again.');
+        console.error('generateIcon error:', err);
+      }
+    }
 
-async function addGeneratedIcon() {
-  if (!pendingIcon) return;
-  aiIcons.push(pendingIcon);
-  await saveAiIcons();
-  updateStats();
-  closeGenerate();
-  currentCategory='all'; currentSearch='';
-  document.getElementById('search').value='';
-  document.querySelectorAll('.filter-tab').forEach((b,i)=>{ b.classList.toggle('active',i===0); b.style.background=''; b.style.borderColor=''; b.style.color=''; });
-  renderGrid();
-  showToast(`✦ "${pendingIcon.name}" added — visible to all users!`);
-  pendingIcon=null;
-}
+    async function addGeneratedIcon() {
+      if (!pendingIcon) return;
+      aiIcons.push(pendingIcon);
+      await saveAiIcons();
+      updateStats();
+      closeGenerate();
+      currentCategory = 'all'; currentSearch = '';
+      document.getElementById('search').value = '';
+      document.querySelectorAll('.filter-tab').forEach((b, i) => { b.classList.toggle('active', i === 0); b.style.background = ''; b.style.borderColor = ''; b.style.color = ''; });
+      renderGrid();
+      showToast(`✦ "${pendingIcon.name}" added — visible to all users!`);
+      pendingIcon = null;
+    }
 
-function retryGenerate() {
-  pendingIcon=null;
-  document.getElementById('gen-preview').classList.remove('vis');
-  document.getElementById('gen-add-btn').style.display='none';
-  document.getElementById('gen-retry-btn').style.display='none';
-  document.getElementById('gen-submit-btn').style.display='';
-  generateIcon();
-}
-
-// ===================== TOAST =====================
-function showToast(msg) {
-  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),3500);
-}
-
-// ===================== API PANEL =====================
-function openApi() { document.getElementById('api-panel').classList.add('open'); }
-function closeApi(e) {
-  if (e && e.target!==document.getElementById('api-panel') && !e.target.classList.contains('modal-close')) return;
-  document.getElementById('api-panel').classList.remove('open');
-}
-function exportAllJson() {
-  const all = [...BASE_ICONS,...aiIcons];
-  const payload = {version:'1.0.0',count:all.length,license:'MIT',categories:[...new Set(all.map(i=>i.category))],icons:all.map(i=>({id:i.id,name:i.name,category:i.category,tags:i.tags,path:i.path,svg:makeSvg(i),viewBox:'0 0 24 24',strokeWidth:1.5,generated:i.generated||false}))};
-  const blob = new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href=url; a.download='icons.json'; a.click();
-  URL.revokeObjectURL(url);
-}
-function copyJsonEndpoint() {
-  navigator.clipboard.writeText('/api/icons.json').then(()=>{
-    const el = document.querySelector('.json-endpoint'); el.textContent='✓ Copied!';
-    setTimeout(()=>{el.textContent='📦 GET /api/icons.json';},1500);
-  });
-}
-
-// ===================== KEYBOARD =====================
-document.addEventListener('keydown', e=>{
-  if (e.key==='Escape') {
-    document.getElementById('modal-overlay').classList.remove('open');
-    document.getElementById('api-panel').classList.remove('open');
-    document.getElementById('gen-panel').classList.remove('open');
-  }
-  if (e.key==='Enter' && document.getElementById('gen-panel').classList.contains('open')) {
-    if (document.getElementById('gen-name')===document.activeElement && !document.getElementById('gen-preview').classList.contains('vis')) {
+    function retryGenerate() {
+      pendingIcon = null;
+      document.getElementById('gen-preview').classList.remove('vis');
+      document.getElementById('gen-add-btn').style.display = 'none';
+      document.getElementById('gen-retry-btn').style.display = 'none';
+      document.getElementById('gen-submit-btn').style.display = '';
       generateIcon();
     }
-  }
-});
 
-// ===================== INIT =====================
-loadAiIcons().then(()=>{ updateStats(); renderGrid(); });
-</script>
+    // ===================== TOAST =====================
+    function showToast(msg) {
+      const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3500);
+    }
+
+    // ===================== API PANEL =====================
+    function openApi() { document.getElementById('api-panel').classList.add('open'); }
+    function closeApi(e) {
+      if (e && e.target !== document.getElementById('api-panel') && !e.target.classList.contains('modal-close')) return;
+      document.getElementById('api-panel').classList.remove('open');
+    }
+    function exportAllJson() {
+      const all = [...BASE_ICONS, ...aiIcons];
+      const payload = { version: '1.0.0', count: all.length, license: 'MIT', categories: [...new Set(all.map(i => i.category))], icons: all.map(i => ({ id: i.id, name: i.name, category: i.category, tags: i.tags, path: i.path, svg: makeSvg(i), viewBox: '0 0 24 24', strokeWidth: 1.5, generated: i.generated || false })) };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'icons.json'; a.click();
+      URL.revokeObjectURL(url);
+    }
+    function copyJsonEndpoint() {
+      navigator.clipboard.writeText('/api/icons.json').then(() => {
+        const el = document.querySelector('.json-endpoint'); el.textContent = '✓ Copied!';
+        setTimeout(() => { el.textContent = '📦 GET /api/icons.json'; }, 1500);
+      });
+    }
+
+    // ===================== KEYBOARD =====================
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        document.getElementById('modal-overlay').classList.remove('open');
+        document.getElementById('api-panel').classList.remove('open');
+        document.getElementById('gen-panel').classList.remove('open');
+      }
+      if (e.key === 'Enter' && document.getElementById('gen-panel').classList.contains('open')) {
+        if (document.getElementById('gen-name') === document.activeElement && !document.getElementById('gen-preview').classList.contains('vis')) {
+          generateIcon();
+        }
+      }
+    });
+
+    // ===================== INIT =====================
+    loadAiIcons().then(() => { updateStats(); renderGrid(); });
+  </script>
 </body>
+
 </html>
