@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 // Local fallback for development/safety
-const DATA_PATH = path.join(process.cwd(), 'api', 'icons.json');
+const DATA_PATH = path.join(process.cwd(), 'api', 'icons-data.json');
 
 // Supabase configuration
 const supabaseUrl = process.env.SUPABASE_URL;
