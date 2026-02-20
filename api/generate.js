@@ -59,7 +59,7 @@ JSON Schema:
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022', // Reverting to stable 3.5 Sonnet for better compatibility
+        model: 'claude-3-5-sonnet-20241022', // Reverting to high-quality stable 3.5 Sonnet as requested
         max_tokens: 512,
         messages: [{ role: 'user', content: prompt }],
       }),
