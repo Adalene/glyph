@@ -64,7 +64,7 @@ Respond ONLY with valid JSON, no markdown fences:
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-3-5-haiku-latest', // stable and fast for icon generation
+        model: 'claude-4-5-haiku-20251015', // updated from retired claude-3-5-haiku-latest
         max_tokens: 512,
         messages: [{ role: 'user', content: prompt }],
       }),
