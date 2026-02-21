@@ -15,33 +15,38 @@ const supabase = (supabaseUrl && supabaseKey)
     : null;
 
 export async function getIcons() {
-    // 1. Try Supabase first
+    let baseIcons = [];
+
+    // 1. Load base icons from local fallback
+    if (fs.existsSync(DATA_PATH)) {
+        try {
+            const data = fs.readFileSync(DATA_PATH, 'utf8');
+            baseIcons = JSON.parse(data);
+        } catch (err) {
+            console.error('Local read error:', err);
+        }
+    }
+
+    // 2. Try Supabase for community/generated icons
     if (supabase) {
         try {
             const { data, error } = await supabase
                 .from('icons')
                 .select('*')
-                .order('generated', { ascending: true }); // Base icons first
+                .order('generated', { ascending: true }); // Base icons first if they are in DB
 
-            if (!error && data && data.length > 0) {
-                return data;
+            if (!error && data) {
+                // Merge base icons with Supabase icons, ensuring uniqueness by ID
+                const baseIds = new Set(baseIcons.map(i => i.id));
+                const extraIcons = data.filter(i => !baseIds.has(i.id));
+                return [...baseIcons, ...extraIcons];
             }
         } catch (err) {
             console.error('Supabase fetch error:', err);
         }
     }
 
-    // 2. Fallback to local JSON
-    if (fs.existsSync(DATA_PATH)) {
-        try {
-            const data = fs.readFileSync(DATA_PATH, 'utf8');
-            return JSON.parse(data);
-        } catch (err) {
-            console.error('Local read error:', err);
-        }
-    }
-
-    return [];
+    return baseIcons;
 }
 
 export async function saveIcon(icon) {

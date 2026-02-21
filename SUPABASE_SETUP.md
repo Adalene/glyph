@@ -8,10 +8,11 @@ To connect your icon library to Supabase, follow these steps:
 3. Name it (e.g., `Glyph Icons`) and set a database password.
 
 ### 2. Create the Table
-Once your project is ready, go to the **SQL Editor** in the left sidebar and run this script to create the `icons` table:
+Once your project is ready, go to the **SQL Editor** in the left sidebar and run this script to create the `icons` table. This script is "idempotent," meaning you can run it multiple times without errors:
 
 ```sql
-create table icons (
+-- 1. Create the table (only if it doesn't already exist)
+create table if not exists icons (
   id text primary key, -- The slug/id of the icon
   name text not null,
   category text not null,
@@ -22,19 +23,20 @@ create table icons (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- Enable Row Level Security (RLS)
+-- 2. Enable Row Level Security (RLS)
 alter table icons enable row level security;
 
--- Create a policy to allow anyone to read icons
-create policy "Allow public read access"
-  on icons for select
-  using (true);
+-- 3. Create policies (wrapped in a block to avoid "already exists" errors)
+do $$ 
+begin
+  if not exists (select 1 from pg_policies where policyname = 'Allow public read access') then
+    create policy "Allow public read access" on icons for select using (true);
+  end if;
 
--- Create a policy to allow inserting icons (for our API)
--- Note: In a production app, you'd restrict this with more granular rules
-create policy "Allow public insert"
-  on icons for insert
-  with check (true);
+  if not exists (select 1 from pg_policies where policyname = 'Allow public insert') then
+    create policy "Allow public insert" on icons for insert with check (true);
+  end if;
+end $$;
 ```
 
 ### 3. Get Your API Keys
