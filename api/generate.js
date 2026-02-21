@@ -1,13 +1,4 @@
-/**
- * GLYPH — AI Icon Generator Proxy
- * 
- * This serverless function proxies requests to the Anthropic API.
- * Your ANTHROPIC_API_KEY lives ONLY as a Vercel environment variable —
- * it is never in source code and never exposed to the browser.
- *
- * Deploy: https://vercel.com → Project Settings → Environment Variables
- * Add:    ANTHROPIC_API_KEY = sk-ant-...
- */
+import { saveIcon } from './db.js';
 
 export default async function handler(req, res) {
   // Only allow POST
@@ -68,7 +59,7 @@ JSON Schema:
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6', // Upgraded to the latest high-quality model
+        model: 'claude-sonnet-4-6', // Using the latest high-performance model for superior design results
         max_tokens: 512,
         messages: [{ role: 'user', content: prompt }],
       }),
@@ -97,20 +88,24 @@ JSON Schema:
 
     const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
-    return res.status(200).json({
-      icon: {
-        id: slug,
-        name: name.charAt(0).toUpperCase() + name.slice(1),
-        category,
-        tags: parsed.tags || [name.toLowerCase()],
-        path: parsed.path,
-        generated: true,
-        generatedAt: Date.now(),
-      }
-    });
+    const icon = {
+      id: slug,
+      name: name.charAt(0).toUpperCase() + name.slice(1),
+      category,
+      tags: parsed.tags || [name.toLowerCase()],
+      path: parsed.path,
+      generated: true,
+      generatedAt: Date.now(),
+    };
+
+    // Save to shared library immediately
+    await saveIcon(icon);
+
+    return res.status(200).json({ icon });
 
   } catch (err) {
     console.error('Handler error:', err);
     return res.status(500).json({ error: 'Failed to generate icon. Please try again.' });
   }
 }
+

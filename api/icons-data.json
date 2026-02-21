@@ -1,0 +1,889 @@
+[
+    {
+        "id": "home",
+        "name": "Home",
+        "category": "ui",
+        "tags": [
+            "house",
+            "main"
+        ],
+        "path": "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10"
+    },
+    {
+        "id": "settings",
+        "name": "Settings",
+        "category": "ui",
+        "tags": [
+            "gear",
+            "config",
+            "cog"
+        ],
+        "path": "M12 15A3 3 0 1 0 12 9 3 3 0 0 0 12 15Z M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+    },
+    {
+        "id": "user",
+        "name": "User",
+        "category": "ui",
+        "tags": [
+            "person",
+            "account",
+            "avatar"
+        ],
+        "path": "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 3A4 4 0 1 0 12 11 4 4 0 0 0 12 3Z"
+    },
+    {
+        "id": "menu",
+        "name": "Menu",
+        "category": "ui",
+        "tags": [
+            "hamburger",
+            "nav",
+            "sidebar"
+        ],
+        "path": "M3 12h18 M3 6h18 M3 18h18"
+    },
+    {
+        "id": "close",
+        "name": "Close",
+        "category": "ui",
+        "tags": [
+            "x",
+            "cancel",
+            "dismiss"
+        ],
+        "path": "M18 6L6 18 M6 6l12 12"
+    },
+    {
+        "id": "search",
+        "name": "Search",
+        "category": "ui",
+        "tags": [
+            "find",
+            "magnify",
+            "look"
+        ],
+        "path": "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13z M21 21l-4.5-4.5"
+    },
+    {
+        "id": "plus",
+        "name": "Plus",
+        "category": "ui",
+        "tags": [
+            "add",
+            "create",
+            "new"
+        ],
+        "path": "M12 5v14 M5 12h14"
+    },
+    {
+        "id": "minus",
+        "name": "Minus",
+        "category": "ui",
+        "tags": [
+            "remove",
+            "delete",
+            "subtract"
+        ],
+        "path": "M5 12h14"
+    },
+    {
+        "id": "check",
+        "name": "Check",
+        "category": "ui",
+        "tags": [
+            "tick",
+            "done",
+            "success",
+            "verify"
+        ],
+        "path": "M20 6L9 17l-5-5"
+    },
+    {
+        "id": "info",
+        "name": "Info",
+        "category": "ui",
+        "tags": [
+            "information",
+            "help",
+            "tooltip"
+        ],
+        "path": "M12 22A10 10 0 1 0 12 2a10 10 0 0 0 0 20z M12 16v-4 M12 8h.01"
+    },
+    {
+        "id": "alert",
+        "name": "Alert",
+        "category": "ui",
+        "tags": [
+            "warning",
+            "danger",
+            "caution"
+        ],
+        "path": "M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z M12 9v4 M12 17h.01"
+    },
+    {
+        "id": "lock",
+        "name": "Lock",
+        "category": "ui",
+        "tags": [
+            "secure",
+            "password",
+            "private"
+        ],
+        "path": "M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2z M7 11V7a5 5 0 0 1 10 0v4"
+    },
+    {
+        "id": "play",
+        "name": "Play",
+        "category": "media",
+        "tags": [
+            "start",
+            "video",
+            "audio"
+        ],
+        "path": "M5 3l14 9-14 9V3z"
+    },
+    {
+        "id": "pause",
+        "name": "Pause",
+        "category": "media",
+        "tags": [
+            "stop",
+            "media"
+        ],
+        "path": "M6 4h4v16H6z M14 4h4v16h-4z"
+    },
+    {
+        "id": "skip-forward",
+        "name": "Skip Forward",
+        "category": "media",
+        "tags": [
+            "next",
+            "fast-forward"
+        ],
+        "path": "M5 4l10 8-10 8V4z M19 5v14"
+    },
+    {
+        "id": "skip-back",
+        "name": "Skip Back",
+        "category": "media",
+        "tags": [
+            "previous",
+            "rewind"
+        ],
+        "path": "M19 20L9 12l10-8v16z M5 19V5"
+    },
+    {
+        "id": "volume",
+        "name": "Volume",
+        "category": "media",
+        "tags": [
+            "sound",
+            "speaker",
+            "audio"
+        ],
+        "path": "M11 5L6 9H2v6h4l5 4V5z M19.07 4.93a10 10 0 0 1 0 14.14 M15.54 8.46a5 5 0 0 1 0 7.07"
+    },
+    {
+        "id": "mute",
+        "name": "Mute",
+        "category": "media",
+        "tags": [
+            "volume-off",
+            "silent",
+            "no-sound"
+        ],
+        "path": "M11 5L6 9H2v6h4l5 4V5z M23 9l-6 6 M17 9l6 6"
+    },
+    {
+        "id": "camera",
+        "name": "Camera",
+        "category": "media",
+        "tags": [
+            "photo",
+            "picture",
+            "image"
+        ],
+        "path": "M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z M12 17A4 4 0 1 0 12 9a4 4 0 0 0 0 8z"
+    },
+    {
+        "id": "mic",
+        "name": "Mic",
+        "category": "media",
+        "tags": [
+            "microphone",
+            "record",
+            "voice"
+        ],
+        "path": "M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z M19 10v2a7 7 0 0 1-14 0v-2 M12 19v4 M8 23h8"
+    },
+    {
+        "id": "film",
+        "name": "Film",
+        "category": "media",
+        "tags": [
+            "movie",
+            "cinema",
+            "video"
+        ],
+        "path": "M1 4h22v16H1z M7 4v16 M17 4v16 M1 12h22 M7 8H1 M7 16H1 M23 8h-6 M23 16h-6"
+    },
+    {
+        "id": "image",
+        "name": "Image",
+        "category": "media",
+        "tags": [
+            "photo",
+            "picture",
+            "gallery"
+        ],
+        "path": "M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14l5-3 3 2 3-2 5 3z M8.5 10A1.5 1.5 0 1 0 8.5 7 1.5 1.5 0 0 0 8.5 10z"
+    },
+    {
+        "id": "file",
+        "name": "File",
+        "category": "files",
+        "tags": [
+            "document",
+            "paper"
+        ],
+        "path": "M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z M13 2v7h7"
+    },
+    {
+        "id": "folder",
+        "name": "Folder",
+        "category": "files",
+        "tags": [
+            "directory",
+            "storage"
+        ],
+        "path": "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+    },
+    {
+        "id": "folder-open",
+        "name": "Folder Open",
+        "category": "files",
+        "tags": [
+            "open",
+            "directory"
+        ],
+        "path": "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z M2 11h20"
+    },
+    {
+        "id": "upload",
+        "name": "Upload",
+        "category": "files",
+        "tags": [
+            "send",
+            "export",
+            "cloud"
+        ],
+        "path": "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M17 8l-5-5-5 5 M12 3v12"
+    },
+    {
+        "id": "download",
+        "name": "Download",
+        "category": "files",
+        "tags": [
+            "save",
+            "import",
+            "receive"
+        ],
+        "path": "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M7 10l5 5 5-5 M12 15V3"
+    },
+    {
+        "id": "trash",
+        "name": "Trash",
+        "category": "files",
+        "tags": [
+            "delete",
+            "remove",
+            "bin"
+        ],
+        "path": "M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"
+    },
+    {
+        "id": "copy",
+        "name": "Copy",
+        "category": "files",
+        "tags": [
+            "duplicate",
+            "clipboard"
+        ],
+        "path": "M20 9H11a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V11a2 2 0 0 0-2-2z M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+    },
+    {
+        "id": "paperclip",
+        "name": "Paperclip",
+        "category": "files",
+        "tags": [
+            "attach",
+            "attachment"
+        ],
+        "path": "M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"
+    },
+    {
+        "id": "archive",
+        "name": "Archive",
+        "category": "files",
+        "tags": [
+            "box",
+            "store",
+            "save"
+        ],
+        "path": "M21 8v13H3V8 M1 3h22v5H1z M10 12h4"
+    },
+    {
+        "id": "clipboard",
+        "name": "Clipboard",
+        "category": "files",
+        "tags": [
+            "paste",
+            "tasks",
+            "list"
+        ],
+        "path": "M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2 M9 2h6a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"
+    },
+    {
+        "id": "arrow-right",
+        "name": "Arrow Right",
+        "category": "arrows",
+        "tags": [
+            "next",
+            "forward"
+        ],
+        "path": "M5 12h14 M12 5l7 7-7 7"
+    },
+    {
+        "id": "arrow-left",
+        "name": "Arrow Left",
+        "category": "arrows",
+        "tags": [
+            "back",
+            "previous"
+        ],
+        "path": "M19 12H5 M12 19l-7-7 7-7"
+    },
+    {
+        "id": "arrow-up",
+        "name": "Arrow Up",
+        "category": "arrows",
+        "tags": [
+            "top",
+            "ascend"
+        ],
+        "path": "M12 19V5 M5 12l7-7 7 7"
+    },
+    {
+        "id": "arrow-down",
+        "name": "Arrow Down",
+        "category": "arrows",
+        "tags": [
+            "bottom",
+            "descend"
+        ],
+        "path": "M12 5v14 M19 12l-7 7-7-7"
+    },
+    {
+        "id": "chevron-right",
+        "name": "Chevron Right",
+        "category": "arrows",
+        "tags": [
+            "next",
+            "angle"
+        ],
+        "path": "M9 18l6-6-6-6"
+    },
+    {
+        "id": "chevron-left",
+        "name": "Chevron Left",
+        "category": "arrows",
+        "tags": [
+            "back",
+            "angle"
+        ],
+        "path": "M15 18l-6-6 6-6"
+    },
+    {
+        "id": "chevron-up",
+        "name": "Chevron Up",
+        "category": "arrows",
+        "tags": [
+            "top",
+            "angle"
+        ],
+        "path": "M18 15l-6-6-6 6"
+    },
+    {
+        "id": "chevron-down",
+        "name": "Chevron Down",
+        "category": "arrows",
+        "tags": [
+            "bottom",
+            "angle"
+        ],
+        "path": "M6 9l6 6 6-6"
+    },
+    {
+        "id": "refresh",
+        "name": "Refresh",
+        "category": "arrows",
+        "tags": [
+            "reload",
+            "sync",
+            "loop"
+        ],
+        "path": "M21 2v6h-6 M3 12a9 9 0 0 1 15-6.7L21 8 M3 22v-6h6 M21 12a9 9 0 0 1-15 6.7L3 16"
+    },
+    {
+        "id": "corner-up-right",
+        "name": "Corner Up Right",
+        "category": "arrows",
+        "tags": [
+            "redirect",
+            "turn"
+        ],
+        "path": "M15 14l5-5-5-5 M4 20v-7a4 4 0 0 1 4-4h12"
+    },
+    {
+        "id": "repeat",
+        "name": "Repeat",
+        "category": "arrows",
+        "tags": [
+            "loop",
+            "cycle"
+        ],
+        "path": "M17 1l4 4-4 4 M3 11V9a4 4 0 0 1 4-4h14 M7 23l-4-4 4-4 M21 13v2a4 4 0 0 1-4 4H3"
+    },
+    {
+        "id": "shuffle",
+        "name": "Shuffle",
+        "category": "arrows",
+        "tags": [
+            "random",
+            "mix"
+        ],
+        "path": "M16 3h5v5 M4 20L21 3 M21 16v5h-5 M15 15l6 6 M4 4l5 5"
+    },
+    {
+        "id": "mail",
+        "name": "Mail",
+        "category": "comms",
+        "tags": [
+            "email",
+            "envelope",
+            "message"
+        ],
+        "path": "M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z M22 6l-10 7L2 6"
+    },
+    {
+        "id": "message",
+        "name": "Message",
+        "category": "comms",
+        "tags": [
+            "chat",
+            "bubble",
+            "talk"
+        ],
+        "path": "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 0 2 2z"
+    },
+    {
+        "id": "phone",
+        "name": "Phone",
+        "category": "comms",
+        "tags": [
+            "call",
+            "contact",
+            "ring"
+        ],
+        "path": "M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.41 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.94-.94a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"
+    },
+    {
+        "id": "bell",
+        "name": "Bell",
+        "category": "comms",
+        "tags": [
+            "notification",
+            "alert",
+            "ring"
+        ],
+        "path": "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 0 1-3.46 0"
+    },
+    {
+        "id": "send",
+        "name": "Send",
+        "category": "comms",
+        "tags": [
+            "submit",
+            "share",
+            "post"
+        ],
+        "path": "M22 2L11 13 M22 2L15 22 9 13 2 9l20-7z"
+    },
+    {
+        "id": "rss",
+        "name": "RSS",
+        "category": "comms",
+        "tags": [
+            "feed",
+            "subscribe",
+            "blog"
+        ],
+        "path": "M4 11a9 9 0 0 1 9 9 M4 4a16 16 0 0 1 16 16 M5 19A1 1 0 1 0 5 17a1 1 0 0 0 0 2z"
+    },
+    {
+        "id": "share",
+        "name": "Share",
+        "category": "comms",
+        "tags": [
+            "social",
+            "distribute",
+            "spread"
+        ],
+        "path": "M18 8A3 3 0 1 0 18 2a3 3 0 0 0 0 6z M6 15A3 3 0 1 0 6 9a3 3 0 0 0 0 6z M18 22A3 3 0 1 0 18 16a3 3 0 0 0 0 6z M8.59 13.51l6.83 3.98 M15.41 6.51l-6.82 3.98"
+    },
+    {
+        "id": "wifi",
+        "name": "WiFi",
+        "category": "comms",
+        "tags": [
+            "wireless",
+            "internet",
+            "network"
+        ],
+        "path": "M5 12.55a11 11 0 0 1 14.08 0 M1.42 9a16 16 0 0 1 21.16 0 M8.53 16.11a6 6 0 0 1 6.95 0 M12 20h.01"
+    },
+    {
+        "id": "bar-chart",
+        "name": "Bar Chart",
+        "category": "data",
+        "tags": [
+            "graph",
+            "stats",
+            "analytics"
+        ],
+        "path": "M18 20V10 M12 20V4 M6 20v-6"
+    },
+    {
+        "id": "pie-chart",
+        "name": "Pie Chart",
+        "category": "data",
+        "tags": [
+            "graph",
+            "stats",
+            "percentage"
+        ],
+        "path": "M21.21 15.89A10 10 0 1 1 8 2.83 M22 12A10 10 0 0 0 12 2v10z"
+    },
+    {
+        "id": "trending-up",
+        "name": "Trending Up",
+        "category": "data",
+        "tags": [
+            "growth",
+            "increase",
+            "rise"
+        ],
+        "path": "M23 6l-9.5 9.5-5-5L1 18 M17 6h6v6"
+    },
+    {
+        "id": "trending-down",
+        "name": "Trending Down",
+        "category": "data",
+        "tags": [
+            "decline",
+            "decrease",
+            "fall"
+        ],
+        "path": "M23 18l-9.5-9.5-5 5L1 6 M17 18h6v-6"
+    },
+    {
+        "id": "database",
+        "name": "Database",
+        "category": "data",
+        "tags": [
+            "storage",
+            "server",
+            "sql"
+        ],
+        "path": "M12 2A9 3 0 1 0 12 8 9 3 0 0 0 12 2Z M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"
+    },
+    {
+        "id": "server",
+        "name": "Server",
+        "category": "data",
+        "tags": [
+            "hosting",
+            "backend",
+            "infrastructure"
+        ],
+        "path": "M2 3h20v6H2z M2 9h20v6H2z M2 15h20v6H2z M6 7h.01 M6 13h.01 M6 19h.01"
+    },
+    {
+        "id": "cpu",
+        "name": "CPU",
+        "category": "data",
+        "tags": [
+            "processor",
+            "chip",
+            "hardware"
+        ],
+        "path": "M9 3H7a2 2 0 0 0-2 2v2m0 8v2a2 2 0 0 0 2 2h2m8-16h2a2 2 0 0 1 2 2v2m0 8v2a2 2 0 0 1-2 2h-2 M9 3v2 M15 3v2 M9 19v2 M15 19v2 M3 9h2 M3 15h2 M19 9h2 M19 15h2 M7 7h10v10H7z"
+    },
+    {
+        "id": "activity",
+        "name": "Activity",
+        "category": "data",
+        "tags": [
+            "pulse",
+            "heartbeat",
+            "monitor"
+        ],
+        "path": "M22 12h-4l-3 9L9 3l-3 9H2"
+    },
+    {
+        "id": "code",
+        "name": "Code",
+        "category": "data",
+        "tags": [
+            "programming",
+            "developer",
+            "terminal"
+        ],
+        "path": "M16 18l6-6-6-6 M8 6l-6 6 6 6"
+    },
+    {
+        "id": "terminal",
+        "name": "Terminal",
+        "category": "data",
+        "tags": [
+            "command",
+            "cli",
+            "shell"
+        ],
+        "path": "M4 17l6-6-6-6 M12 19h8"
+    },
+    {
+        "id": "sun",
+        "name": "Sun",
+        "category": "weather",
+        "tags": [
+            "sunny",
+            "clear",
+            "day",
+            "bright"
+        ],
+        "path": "M12 17A5 5 0 1 0 12 7a5 5 0 0 0 0 10z M12 1v2 M12 21v2 M4.22 4.22l1.42 1.42 M18.36 18.36l1.42 1.42 M1 12h2 M21 12h2 M4.22 19.78l1.42-1.42 M18.36 5.64l1.42-1.42"
+    },
+    {
+        "id": "moon",
+        "name": "Moon",
+        "category": "weather",
+        "tags": [
+            "night",
+            "dark",
+            "sleep"
+        ],
+        "path": "M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+    },
+    {
+        "id": "cloud",
+        "name": "Cloud",
+        "category": "weather",
+        "tags": [
+            "cloudy",
+            "overcast",
+            "weather"
+        ],
+        "path": "M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"
+    },
+    {
+        "id": "cloud-rain",
+        "name": "Rain",
+        "category": "weather",
+        "tags": [
+            "rain",
+            "drizzle",
+            "wet",
+            "storm"
+        ],
+        "path": "M16 13v8 M8 13v8 M12 15v8 M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"
+    },
+    {
+        "id": "cloud-snow",
+        "name": "Snow",
+        "category": "weather",
+        "tags": [
+            "snow",
+            "winter",
+            "cold"
+        ],
+        "path": "M20 17.58A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25 M8 16h.01 M8 20h.01 M12 18h.01 M12 22h.01 M16 16h.01 M16 20h.01"
+    },
+    {
+        "id": "wind",
+        "name": "Wind",
+        "category": "weather",
+        "tags": [
+            "breeze",
+            "air",
+            "gust"
+        ],
+        "path": "M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"
+    },
+    {
+        "id": "umbrella",
+        "name": "Umbrella",
+        "category": "weather",
+        "tags": [
+            "rain",
+            "protection",
+            "weather"
+        ],
+        "path": "M23 12a11.05 11.05 0 0 0-22 0zm-5 7a3 3 0 0 1-6 0v-7"
+    },
+    {
+        "id": "thermometer",
+        "name": "Thermometer",
+        "category": "weather",
+        "tags": [
+            "temperature",
+            "heat",
+            "cold"
+        ],
+        "path": "M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"
+    },
+    {
+        "id": "lightning",
+        "name": "Lightning",
+        "category": "weather",
+        "tags": [
+            "thunder",
+            "bolt",
+            "storm",
+            "electric"
+        ],
+        "path": "M13 2L3 14h9l-1 8 10-12h-9l1-8z"
+    },
+    {
+        "id": "eye",
+        "name": "Eye",
+        "category": "weather",
+        "tags": [
+            "visibility",
+            "see",
+            "view"
+        ],
+        "path": "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 15A3 3 0 1 0 12 9a3 3 0 0 0 0 6z"
+    },
+    {
+        "id": "heart",
+        "name": "Heart",
+        "category": "objects",
+        "tags": [
+            "love",
+            "like",
+            "favorite"
+        ],
+        "path": "M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+    },
+    {
+        "id": "star",
+        "name": "Star",
+        "category": "objects",
+        "tags": [
+            "favorite",
+            "rating",
+            "bookmark"
+        ],
+        "path": "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+    },
+    {
+        "id": "bookmark",
+        "name": "Bookmark",
+        "category": "objects",
+        "tags": [
+            "save",
+            "favorite",
+            "mark"
+        ],
+        "path": "M19 21l-7-5-7 5V5a2 2 0 0 1-2-2h10a2 2 0 0 1 2 2z"
+    },
+    {
+        "id": "map-pin",
+        "name": "Map Pin",
+        "category": "objects",
+        "tags": [
+            "location",
+            "place",
+            "marker",
+            "gps"
+        ],
+        "path": "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z M12 10A3 3 0 1 0 12 4a3 3 0 0 0 0 6z"
+    },
+    {
+        "id": "compass",
+        "name": "Compass",
+        "category": "objects",
+        "tags": [
+            "navigate",
+            "direction",
+            "north"
+        ],
+        "path": "M12 22A10 10 0 1 0 12 2a10 10 0 0 0 0 20z M16.24 7.76l-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z"
+    },
+    {
+        "id": "key",
+        "name": "Key",
+        "category": "objects",
+        "tags": [
+            "access",
+            "unlock",
+            "password"
+        ],
+        "path": "M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"
+    },
+    {
+        "id": "gift",
+        "name": "Gift",
+        "category": "objects",
+        "tags": [
+            "present",
+            "birthday",
+            "package"
+        ],
+        "path": "M20 12v10H4V12 M22 7H2v5h20V7z M12 22V7 M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"
+    },
+    {
+        "id": "flag",
+        "name": "Flag",
+        "category": "objects",
+        "tags": [
+            "marker",
+            "country",
+            "report"
+        ],
+        "path": "M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z M4 22v-7"
+    },
+    {
+        "id": "music",
+        "name": "Music",
+        "category": "objects",
+        "tags": [
+            "song",
+            "audio",
+            "melody"
+        ],
+        "path": "M9 18V5l12-2v13 M6 21A3 3 0 1 0 6 15a3 3 0 0 0 0 6z M18 19A3 3 0 1 0 18 13a3 3 0 0 0 0 6z"
+    },
+    {
+        "id": "tool",
+        "name": "Tool",
+        "category": "objects",
+        "tags": [
+            "wrench",
+            "repair",
+            "fix"
+        ],
+        "path": "M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"
+    }
+]
