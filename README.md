@@ -13,7 +13,7 @@ Visitors can browse, copy, and generate new icons — **no sign-up, no API key n
 
 ## 📦 Icons
 
-80 hand-crafted SVG icons across 8 categories:
+80+ SVG icons across 8 categories:
 **UI · Media · Files · Arrows · Comms · Data · Weather · Objects**
 
 All icons: `stroke-only`, `viewBox="0 0 24 24"`, MIT licensed.
