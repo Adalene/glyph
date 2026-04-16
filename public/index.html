@@ -1248,72 +1248,52 @@
                   <input class="gen-input" id="gen-name" type="text"
                         placeholder="e.g. fire, DNA helix, rocket, syringe..." autocomplete="off">
 
-                  <!-- <div class="gen-row">
-                        <div style="flex:1">
-                              <label class="field-label">Category</label>
-                              <select class="gen-select" id="gen-category">
-                                    <option value="objects">Objects</option>
-                                    <option value="ui">UI</option>
-                                    <option value="media">Media</option>
-                                    <option value="files">Files</option>
-                                    <option value="arrows">Arrows</option>
-                                    <option value="comms">Comms</option>
-                                    <option value="data">Data</option>
-                                    <option value="weather">Weather</option>
-                              </select>
-                        </div>
-                        <div style="flex:1">
-                              <label class="field-label">Style</label>
-                              <select class="gen-select" id="gen-style">
-                                    <option value="outline">Outline (default)</option>
-                                    <option value="minimal">Minimal / geometric</option>
-                                    <option value="detailed">Detailed</option>
-                              </select>
-                        </div>
-                  </div> -->
 
-                  <div class="gen-status" id="gen-status">
-                        <div class="spinner"></div>
-                        <span class="gen-status-txt" id="gen-status-txt">Designing icon with AI...</span>
-                  </div>
+                  <!-- Category and Style selections removed to simplify UI -->
 
-                  <div class="gen-preview" id="gen-preview">
-                        <div class="gen-preview-label">Preview</div>
-                        <div class="gen-preview-row">
-                              <div class="gen-preview-left">
-                                    <div class="gen-preview-main" id="gen-preview-main"></div>
-                                    <div class="gen-sizes" id="gen-sizes"></div>
-                              </div>
-                              <div class="gen-preview-right">
-                                    <div class="gen-preview-name" id="gen-preview-name"></div>
-                                    <div class="gen-preview-cat" id="gen-preview-cat"></div>
-                                    <div class="gen-tags" id="gen-tags"></div>
-                              </div>
+
+            <div class="gen-status" id="gen-status">
+                  <div class="spinner"></div>
+                  <span class="gen-status-txt" id="gen-status-txt">Designing icon with AI...</span>
+            </div>
+
+            <div class="gen-preview" id="gen-preview">
+                  <div class="gen-preview-label">Preview</div>
+                  <div class="gen-preview-row">
+                        <div class="gen-preview-left">
+                              <div class="gen-preview-main" id="gen-preview-main"></div>
+                              <div class="gen-sizes" id="gen-sizes"></div>
                         </div>
-                  </div>
-
-                  <div class="gen-actions">
-                        <button class="btn gen" id="gen-add-btn" onclick="addGeneratedIcon()" style="display:none">
-                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
-                                    focusable="false">
-                                    <polyline points="20 6 9 17 4 12" />
-                              </svg>
-                              Add to Library
-                        </button>
-                        <button class="btn" id="gen-retry-btn" onclick="retryGenerate()" style="display:none">↺
-                              Regenerate</button>
-                        <button class="btn primary" id="gen-submit-btn" onclick="generateIcon()">
-                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
-                                    focusable="false">
-                                    <polygon
-                                          points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                              </svg>
-                              Generate Icon
-                        </button>
+                        <div class="gen-preview-right">
+                              <div class="gen-preview-name" id="gen-preview-name"></div>
+                              <div class="gen-preview-cat" id="gen-preview-cat"></div>
+                              <div class="gen-tags" id="gen-tags"></div>
+                        </div>
                   </div>
             </div>
+
+            <div class="gen-actions">
+                  <button class="btn gen" id="gen-add-btn" onclick="addGeneratedIcon()" style="display:none">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+                              focusable="false">
+                              <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        Add to Library
+                  </button>
+                  <button class="btn" id="gen-retry-btn" onclick="retryGenerate()" style="display:none">↺
+                        Regenerate</button>
+                  <button class="btn primary" id="gen-submit-btn" onclick="generateIcon()">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+                              focusable="false">
+                              <polygon
+                                    points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                        Generate Icon
+                  </button>
+            </div>
+      </div>
       </div>
 
       <!-- API Docs Panel -->
@@ -3091,8 +3071,8 @@
                   const name = document.getElementById('gen-name').value.trim();
                   if (!name) { document.getElementById('gen-name').focus(); return; }
 
-                  const category = document.getElementById('gen-category').value;
-                  const style = document.getElementById('gen-style').value;
+                  const category = 'objects';
+                  const style = 'outline';
                   const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
                   if (findIcon(slug)) { showToast(`"${name}" already exists in the library!`); return; }
