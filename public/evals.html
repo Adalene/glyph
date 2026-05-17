@@ -388,23 +388,119 @@
       font-family: 'DM Mono', monospace;
       font-size: 12px;
     }
+    .feed-case { display: flex; flex-direction: column; animation: fadeUp 0.25s ease both; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
     .feed-item {
       display: grid;
-      grid-template-columns: 44px 1fr auto auto;
+      grid-template-columns: 44px 1fr auto auto 18px;
       align-items: center;
       gap: 14px;
       padding: 10px 14px;
       background: var(--surface);
       border: 1px solid var(--border);
       border-left: 2px solid transparent;
-      animation: fadeUp 0.25s ease both;
+      cursor: pointer;
+      user-select: none;
     }
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(6px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
+    .feed-item:hover { background: var(--surface2); }
     .feed-item.pass { border-left-color: var(--pass); }
     .feed-item.fail { border-left-color: var(--fail); }
+    .feed-chevron {
+      font-size: 8px;
+      color: var(--muted);
+      transition: transform 0.2s ease;
+      text-align: center;
+    }
+    .feed-case.open .feed-chevron { transform: rotate(90deg); }
+
+    /* ── Expandable detail panel ── */
+    .feed-detail {
+      display: none;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-top: none;
+      border-left: 2px solid var(--border);
+      padding: 14px 16px;
+    }
+    .feed-case.open .feed-detail { display: block; }
+    .feed-case.open .feed-item { border-bottom-color: transparent; }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 700px) { .detail-grid { grid-template-columns: 1fr; } }
+
+    /* Quality detail (Concept + Visual) */
+    .detail-quality { display: flex; flex-direction: column; gap: 10px; }
+    .detail-metric { display: flex; flex-direction: column; gap: 4px; }
+    .detail-metric-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .detail-metric-name {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 1px;
+      color: var(--accent2);
+    }
+    .detail-score {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      font-weight: 500;
+    }
+    .detail-score.pass { color: var(--pass); }
+    .detail-score.fail { color: var(--fail); }
+    .detail-score.skip { color: var(--muted); }
+    .detail-subscores {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .detail-subscores span {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      color: var(--muted);
+    }
+    .detail-reason {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      color: var(--text);
+      line-height: 1.5;
+      font-style: italic;
+      opacity: 0.8;
+    }
+    .detail-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 4px 0;
+    }
+
+    /* Tech detail rows */
+    .detail-tech { display: flex; flex-direction: column; gap: 6px; }
+    .detail-tech-row {
+      display: grid;
+      grid-template-columns: 20px 90px 1fr;
+      align-items: center;
+      gap: 8px;
+    }
+    .detail-tech-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      color: var(--muted);
+    }
+    .detail-tech-info {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+    }
+    .detail-tech-info.pass { color: var(--pass); }
+    .detail-tech-info.fail { color: var(--fail); }
+    .detail-tech-info.skip { color: var(--muted); }
     .feed-status {
       font-family: 'DM Mono', monospace;
       font-size: 9px;
@@ -919,6 +1015,7 @@ Pass threshold: score ≥ 3. badTags lists any clearly wrong tags.</pre>
     let total = 0;
     let completed = 0;
     let passed = 0;
+    const resultCache = new Map(); // caseId → full result object
 
     const METRICS = [
       { name: 'semantic',   label: 'Concept Match', type: 'llm', primary: true },
@@ -1023,6 +1120,7 @@ Pass threshold: score ≥ 3. badTags lists any clearly wrong tags.</pre>
       running = true;
       completed = 0;
       passed = 0;
+      resultCache.clear();
       for (const m of METRICS) metricState[m.name] = { passed: 0, total: 0, skipped: 0 };
 
       // Reset UI
@@ -1112,7 +1210,123 @@ Pass threshold: score ≥ 3. badTags lists any clearly wrong tags.</pre>
           <span class="feed-meta">${meta}</span>
         </div>
         <div class="feed-quality">${qualityBadges}</div>
-        <div class="feed-tech">${techChips}</div>`;
+        <div class="feed-tech">${techChips}</div>
+        <span class="feed-chevron">▶</span>`;
+    }
+
+    // ── Build the expanded detail panel HTML for a case result ──
+    function buildDetailHTML(result) {
+      const metrics = result.metrics || [];
+
+      const QUALITY_DEFS = [
+        { name: 'semantic', label: 'CONCEPT MATCH' },
+        { name: 'design',   label: 'VISUAL QUALITY' },
+      ];
+      const qualityHTML = QUALITY_DEFS.map((qd, i) => {
+        const m = metrics.find(x => x.metric === qd.name);
+        const skipped = !m || m.details?.skipped;
+        if (skipped) {
+          return `${i > 0 ? '<hr class="detail-divider">' : ''}
+            <div class="detail-metric">
+              <div class="detail-metric-header">
+                <span class="detail-metric-name">${qd.label}</span>
+                <span class="detail-score skip">SKIPPED</span>
+              </div>
+              <p class="detail-reason" style="font-style:normal;opacity:0.5">Run in LIVE mode to get LLM scores.</p>
+            </div>`;
+        }
+        const score = m.details?.score ?? '?';
+        const reason = m.details?.reason ?? '';
+        const cls = m.pass ? 'pass' : 'fail';
+        let subscoresHTML = '';
+        if (m.details?.subscores) {
+          const ss = m.details.subscores;
+          subscoresHTML = `<div class="detail-subscores">
+            <span title="Representation">Rep ${ss.representation ?? '?'}</span>
+            <span title="Guidelines">Guide ${ss.guidelines ?? '?'}</span>
+            <span title="Aesthetics">Aes ${ss.aesthetics ?? '?'}</span>
+            <span title="Polish">Polish ${ss.polish ?? '?'}</span>
+          </div>`;
+        }
+        return `${i > 0 ? '<hr class="detail-divider">' : ''}
+          <div class="detail-metric">
+            <div class="detail-metric-header">
+              <span class="detail-metric-name">${qd.label}</span>
+              <span class="detail-score ${cls}">${score}/5</span>
+            </div>
+            ${subscoresHTML}
+            ${reason ? `<p class="detail-reason">"${reason}"</p>` : ''}
+          </div>`;
+      }).join('');
+
+      const TECH_DEFS = [
+        { name: 'structural', letter: 'S', label: 'Structural',
+          detail: d => d?.checkedFields ? `${d.checkedFields} fields` : 'JSON + fields valid' },
+        { name: 'svg-path',   letter: 'P', label: 'SVG Syntax',
+          detail: d => d?.commandCount != null ? `${d.commandCount} commands` : '' },
+        { name: 'bounds',     letter: 'B', label: 'Bounds 2–22',
+          detail: d => {
+            if (!d) return '';
+            if (d.violationCount > 0) return `${d.violationCount} violation${d.violationCount > 1 ? 's' : ''}: ${(d.violations || []).slice(0, 5).join(', ')}`;
+            return `${d.checkedCoordinates ?? '?'} coords OK`;
+          }},
+        { name: 'complexity', letter: 'C', label: 'Complexity',
+          detail: d => d?.commandCount != null ? `${d.commandCount} commands` : '' },
+        { name: 'tags',       letter: 'T', label: 'Tags',
+          detail: d => {
+            if (!d || d.skipped) return 'skipped';
+            return [d.score != null ? `${d.score}/5` : '', d.reason].filter(Boolean).join(' · ');
+          }},
+      ];
+      const techHTML = TECH_DEFS.map(td => {
+        const m = metrics.find(x => x.metric === td.name);
+        const skipped = !m || m.details?.skipped;
+        const passing = m?.pass && !skipped;
+        const cls = skipped ? 'skip' : passing ? 'pass' : 'fail';
+        const info = skipped ? 'skipped' : (td.detail(m?.details) || (passing ? 'pass' : 'fail'));
+        return `<div class="detail-tech-row">
+          <span class="ft-chip ${cls}">${td.letter}</span>
+          <span class="detail-tech-label">${td.label}</span>
+          <span class="detail-tech-info ${cls}">${info}</span>
+        </div>`;
+      }).join('');
+
+      return `<div class="detail-grid">
+        <div class="detail-quality">${qualityHTML}</div>
+        <div class="detail-tech">${techHTML}</div>
+      </div>`;
+    }
+
+    // ── Toggle expand/collapse for a case row ──
+    function toggleDetail(caseId) {
+      const caseEl = document.getElementById('case-' + caseId);
+      if (!caseEl) return;
+      const detailEl = caseEl.querySelector('.feed-detail');
+      const isOpen = caseEl.classList.toggle('open');
+      if (isOpen && !detailEl.innerHTML) {
+        const result = resultCache.get(caseId);
+        if (result) detailEl.innerHTML = buildDetailHTML(result);
+      }
+    }
+
+    // ── Append one case result row to the feed (shared by live stream + history replay) ──
+    function appendCaseToFeed(result, feed) {
+      resultCache.set(result.caseId, result);
+      const caseEl = document.createElement('div');
+      caseEl.className = 'feed-case';
+      caseEl.id = 'case-' + result.caseId;
+
+      const item = document.createElement('div');
+      item.className = `feed-item ${result.overallPass ? 'pass' : 'fail'}`;
+      item.innerHTML = buildCaseRowHTML(result);
+      item.addEventListener('click', () => toggleDetail(result.caseId));
+
+      const detailEl = document.createElement('div');
+      detailEl.className = 'feed-detail';
+
+      caseEl.appendChild(item);
+      caseEl.appendChild(detailEl);
+      feed.appendChild(caseEl);
     }
 
     // ── Load a specific past run by ID and replay into feed ──
@@ -1128,19 +1342,16 @@ Pass threshold: score ≥ 3. badTags lists any clearly wrong tags.</pre>
         document.querySelectorAll('.history-item').forEach(el => el.classList.remove('active'));
         document.querySelector(`.history-item[data-id="${id}"]`)?.classList.add('active');
 
-        // Clear feed + reset sidebar tallies
+        // Clear feed + reset sidebar tallies + clear result cache
         const feed = document.getElementById('feed');
         document.getElementById('feed-empty')?.remove();
         feed.innerHTML = '';
+        resultCache.clear();
         for (const m of METRICS) metricState[m.name] = { passed: 0, total: 0, skipped: 0 };
 
         // Replay each stored result into the feed
         for (const result of run.results) {
-          const item = document.createElement('div');
-          item.className = `feed-item ${result.overallPass ? 'pass' : 'fail'}`;
-          item.innerHTML = buildCaseRowHTML(result);
-          feed.appendChild(item);
-
+          appendCaseToFeed(result, feed);
           for (const m of result.metrics || []) {
             if (metricState[m.metric]) {
               metricState[m.metric].total++;
@@ -1195,10 +1406,7 @@ Pass threshold: score ≥ 3. badTags lists any clearly wrong tags.</pre>
 
         // Append feed row
         const feed = document.getElementById('feed');
-        const item = document.createElement('div');
-        item.className = `feed-item ${ev.overallPass ? 'pass' : 'fail'}`;
-        item.innerHTML = buildCaseRowHTML(ev);
-        feed.appendChild(item);
+        appendCaseToFeed(ev, feed);
         feed.scrollTop = feed.scrollHeight;
 
         // Progress
