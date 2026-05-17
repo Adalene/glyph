@@ -958,6 +958,7 @@ Pass threshold: score ≥ 3. badTags lists any clearly wrong tags.</pre>
     <div class="run-meta" id="run-meta">
       <strong id="case-count">—</strong> icons &middot; <span id="mode-note">no API calls</span>
     </div>
+    <button class="nav-btn" id="refresh-btn" onclick="refreshIcons()" title="Reload icons and latest scores">↻ REFRESH</button>
   </div>
 
   <!-- Progress Bar -->
@@ -1037,8 +1038,9 @@ Pass threshold: score ≥ 3. badTags lists any clearly wrong tags.</pre>
 
     // ── Init ──
     renderMetricRows();
-    loadHistory({ autoLoadLatest: true });
+    loadHistory();
     loadIconCount();
+    loadScores();
 
     // ── Explainer toggle ──
     function toggleExplainer() {
@@ -1067,20 +1069,24 @@ Pass threshold: score ≥ 3. badTags lists any clearly wrong tags.</pre>
       } catch {}
     }
 
+    async function refreshIcons() {
+      if (running) return;
+      const btn = document.getElementById('refresh-btn');
+      btn.disabled = true;
+      btn.textContent = '↻ …';
+      await Promise.all([loadIconCount(), loadScores()]);
+      btn.disabled = false;
+      btn.textContent = '↻ REFRESH';
+    }
+
     // ── Mode ──
     function setMode(m) {
       mode = m;
       document.getElementById('btn-dry').classList.toggle('active', m === 'dry');
       document.getElementById('btn-live').classList.toggle('active', m === 'live');
-      const totalIcons = parseInt(document.getElementById('case-count').textContent) || 0;
       document.getElementById('mode-note').textContent = m === 'dry'
         ? 'no API calls'
-        : 'per run · calls Claude — ~$0.05';
-      if (m === 'live') {
-        document.getElementById('case-count').textContent = '30';
-      } else {
-        loadIconCount();
-      }
+        : 'calls Claude — ~$0.05 per run';
       document.getElementById('summary-label').textContent = m === 'live' ? 'QUALITY SCORE' : 'TECH SCORE';
     }
 
@@ -1154,7 +1160,7 @@ Pass threshold: score ≥ 3. badTags lists any clearly wrong tags.</pre>
 
       // SSE via fetch + ReadableStream
       const isDry = mode === 'dry';
-      const body = JSON.stringify({ dryRun: isDry, ...(isDry ? {} : { maxCases: 30 }) });
+      const body = JSON.stringify({ dryRun: isDry });
       fetch('/api/evals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body })
         .then(res => {
           const reader = res.body.getReader();
@@ -1502,6 +1508,7 @@ Pass threshold: score ≥ 3. badTags lists any clearly wrong tags.</pre>
         scoreEl.className = 'summary-score ' + (overallPct >= 90 ? 'good' : overallPct >= 70 ? 'ok' : 'bad');
         showToast(`Done — ${ev.passed}/${ev.total} passed (${overallPct}%)`);
         loadHistory();
+        loadScores(); // refresh feed + sidebar with updated all-time scores
       }
 
       if (ev.type === 'error') {
@@ -1516,6 +1523,127 @@ Pass threshold: score ≥ 3. badTags lists any clearly wrong tags.</pre>
       runBtn.classList.remove('running');
       document.getElementById('run-label').textContent = 'RUN EVALS';
       document.getElementById('run-icon').innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
+    }
+
+    // ── Convert icon_scores row → result object for feed rendering ──
+    function scoreToResult(score, iconMeta) {
+      const toMetric = (col, name) => {
+        if (!col) return { metric: name, pass: false, details: { skipped: true } };
+        return { ...col, metric: name };
+      };
+      const metrics = [
+        toMetric(score.structural, 'structural'),
+        toMetric(score.svg_path, 'svg-path'),
+        toMetric(score.bounds, 'bounds'),
+        toMetric(score.complexity, 'complexity'),
+        toMetric(score.semantic, 'semantic'),
+        toMetric(score.design, 'design'),
+        toMetric(score.tags, 'tags'),
+      ];
+      const sem = metrics.find(m => m.metric === 'semantic');
+      const des = metrics.find(m => m.metric === 'design');
+      const llmAvailable = !sem?.details?.skipped;
+      const overallPass = llmAvailable
+        ? (sem?.pass ?? false) && (des?.pass ?? false)
+        : metrics.filter(m => !m.details?.skipped).every(m => m.pass);
+      return {
+        caseId: score.icon_id,
+        testCase: { name: score.name ?? score.icon_id, category: iconMeta?.category ?? '', style: iconMeta?.style ?? 'outline' },
+        overallPass,
+        metrics,
+      };
+    }
+
+    // ── Append a single icon as a pending (no-score) row to the feed ──
+    function appendPendingIcon(icon, feed) {
+      const caseEl = document.createElement('div');
+      caseEl.className = 'feed-case pending';
+      caseEl.id = 'case-' + icon.id;
+      const item = document.createElement('div');
+      item.className = 'feed-item pending';
+      const pendingChips = '<span class="ft-chip skip">S</span><span class="ft-chip skip">P</span><span class="ft-chip skip">B</span><span class="ft-chip skip">C</span><span class="ft-chip skip">T</span>';
+      const pendingBadges = '<span class="fq-badge skip">– CONCEPT</span><span class="fq-badge skip">– VISUAL</span>';
+      item.innerHTML = `
+        <span class="feed-status pending">–</span>
+        <div class="feed-name-group">
+          <span class="feed-name">${icon.name}</span>
+          <span class="feed-meta">${icon.id}</span>
+        </div>
+        <div class="feed-quality">${pendingBadges}</div>
+        <div class="feed-tech">${pendingChips}</div>
+        <span class="feed-chevron" style="visibility:hidden">▶</span>`;
+      const detailEl = document.createElement('div');
+      detailEl.className = 'feed-detail';
+      caseEl.appendChild(item);
+      caseEl.appendChild(detailEl);
+      feed.appendChild(caseEl);
+    }
+
+    // ── Load aggregated all-time scores from icon_scores table ──
+    async function loadScores({ updateSidebarOnly = false } = {}) {
+      try {
+        const [scoresRes, iconsRes] = await Promise.all([
+          fetch('/api/evals?view=scores'),
+          fetch('/api/icons'),
+        ]);
+        if (!scoresRes.ok || !iconsRes.ok) return;
+        const [{ scores }, iconsData] = await Promise.all([scoresRes.json(), iconsRes.json()]);
+        const allIcons = iconsData.icons ?? iconsData;
+        const scoreMap = new Map((scores || []).map(s => [s.icon_id, s]));
+        const scoredResults = (scores || []).map(s => scoreToResult(s, null));
+
+        if (!updateSidebarOnly) {
+          const feed = document.getElementById('feed');
+          feed.innerHTML = '';
+          resultCache.clear();
+          for (const m of METRICS) metricState[m.name] = { passed: 0, total: 0, skipped: 0 };
+
+          for (const icon of allIcons) {
+            const score = scoreMap.get(icon.id);
+            if (score) {
+              const result = scoreToResult(score, icon);
+              appendCaseToFeed(result, feed);
+              for (const metric of result.metrics) {
+                const s = metricState[metric.metric];
+                if (s) { s.total++; if (metric.pass) s.passed++; if (metric.details?.skipped) s.skipped++; }
+              }
+            } else {
+              appendPendingIcon(icon, feed);
+            }
+          }
+
+          const scoredCount = scores?.length ?? 0;
+          document.getElementById('progress-wrap').classList.add('visible');
+          document.getElementById('progress-fill').style.width = scoredCount > 0 ? '100%' : '0%';
+          document.getElementById('progress-count').textContent = `${scoredCount} / ${allIcons.length}`;
+          document.getElementById('progress-text').textContent = scoredCount > 0 ? 'All-time scores' : 'No scores yet — run evals above';
+          renderMetricRows(); // uses metricState updated above
+        } else {
+          // Recompute sidebar from all scores without touching feed
+          const sidebarState = {};
+          for (const m of METRICS) sidebarState[m.name] = { passed: 0, total: 0, skipped: 0 };
+          for (const r of scoredResults) {
+            for (const metric of r.metrics) {
+              const s = sidebarState[metric.metric];
+              if (s) { s.total++; if (metric.pass) s.passed++; if (metric.details?.skipped) s.skipped++; }
+            }
+          }
+          renderMetricRows(sidebarState);
+        }
+
+        // Update overall score from aggregated all-time data
+        if (scores?.length) {
+          const totalPassed = scoredResults.filter(r => r.overallPass).length;
+          const pct = Math.round((totalPassed / scores.length) * 100);
+          const scoreEl = document.getElementById('summary-score');
+          scoreEl.textContent = pct + '%';
+          scoreEl.className = 'summary-score ' + (pct >= 90 ? 'good' : pct >= 70 ? 'ok' : 'bad');
+          const hasLiveScores = scores.some(s => s.last_live_run_at);
+          document.getElementById('summary-label').textContent = hasLiveScores ? 'QUALITY SCORE' : 'TECH SCORE';
+        }
+      } catch (err) {
+        console.error('loadScores error:', err);
+      }
     }
 
     // ── History ──

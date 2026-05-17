@@ -1,4 +1,4 @@
-import { getIcons, getEvalRuns, getEvalRun, saveEvalRun } from './db.js';
+import { getIcons, getEvalRuns, getEvalRun, saveEvalRun, upsertIconScores, getIconScores } from './db.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -13,7 +13,11 @@ export default async function handler(req, res) {
 
 async function handleGet(req, res) {
   try {
-    const { id } = req.query || {};
+    const { id, view } = req.query || {};
+    if (view === 'scores') {
+      const scores = await getIconScores();
+      return res.status(200).json({ scores });
+    }
     if (id) {
       const run = await getEvalRun(id);
       if (!run) return res.status(404).json({ error: 'Run not found' });
@@ -43,8 +47,7 @@ function buildSummary(allResults) {
 
 async function handlePost(req, res) {
   const { dryRun = true, maxCases } = req.body || {};
-  // Default to 30 icons in LIVE mode to keep runs fast; DRY runs all icons
-  const effectiveMax = dryRun ? (maxCases ?? Infinity) : (maxCases ?? 30);
+  const effectiveMax = maxCases ?? Infinity;
 
   // Server-Sent Events setup
   res.setHeader('Content-Type', 'text/event-stream');
@@ -136,14 +139,18 @@ async function handlePost(req, res) {
     if (allResults.length > 0) {
       const summary = buildSummary(allResults);
       const overallPassed = allResults.filter(r => r.overallPass).length;
-      await saveEvalRun({
-        timestamp: new Date().toISOString(),
-        dryRun,
-        total: allResults.length,
-        passed: overallPassed,
-        summary,
-        results: allResults,
-      }).catch(e => console.error('saveEvalRun error:', e));
+      await Promise.all([
+        saveEvalRun({
+          timestamp: new Date().toISOString(),
+          dryRun,
+          total: allResults.length,
+          passed: overallPassed,
+          summary,
+          results: allResults,
+        }).catch(e => console.error('saveEvalRun error:', e)),
+        // Upsert per-icon latest scores — tech always, quality only on live runs
+        upsertIconScores(allResults, dryRun).catch(e => console.error('upsertIconScores error:', e)),
+      ]);
     }
     res.end();
   }
