@@ -81,6 +81,127 @@ export async function getEvalRun(id) {
     return null;
 }
 
+export async function upsertIconScores(results, dryRun) {
+    if (!supabase || !results.length) return;
+    const now = new Date().toISOString();
+    const g = (r, name) => r.metrics?.find(m => m.metric === name) ?? null;
+    const rows = results.map(r => {
+        const row = {
+            icon_id: r.caseId,
+            name: r.testCase?.name ?? r.caseId,
+            structural: g(r, 'structural'),
+            svg_path: g(r, 'svg-path'),
+            bounds: g(r, 'bounds'),
+            complexity: g(r, 'complexity'),
+            last_run_at: now,
+        };
+        // Only overwrite quality metrics on live runs — preserve previous live results otherwise
+        if (!dryRun) {
+            row.semantic = g(r, 'semantic');
+            row.design = g(r, 'design');
+            row.tags = g(r, 'tags');
+            row.last_live_run_at = now;
+        }
+        return row;
+    });
+    try {
+        const { error } = await supabase
+            .from('icon_scores')
+            .upsert(rows, { onConflict: 'icon_id' });
+        if (error) console.error('upsertIconScores error:', error.message);
+    } catch (err) {
+        console.error('upsertIconScores exception:', err);
+    }
+}
+
+export async function getIconScores() {
+    if (!supabase) return [];
+
+    // Try icon_scores table first
+    try {
+        const { data, error } = await supabase
+            .from('icon_scores')
+            .select('*');
+        if (!error && data?.length) return data;
+        // Table missing or empty — fall through to reconstruct from eval_runs
+        if (error) console.error('getIconScores (will fallback):', error.message);
+    } catch (err) {
+        console.error('getIconScores exception (will fallback):', err);
+    }
+
+    // Fallback: reconstruct per-icon merged scores from stored eval_runs results.
+    // Finds the latest live run (for quality scores) + latest dry run (for tech scores)
+    // and merges them so both concept/visual and tech metrics show up.
+    try {
+        const { data: runMeta } = await supabase
+            .from('eval_runs')
+            .select('id, dry_run, created_at')
+            .order('created_at', { ascending: false })
+            .limit(20);
+
+        if (!runMeta?.length) return [];
+
+        const latestLive = runMeta.find(r => !r.dry_run);
+        const latestDry  = runMeta.find(r =>  r.dry_run);
+        const ids = [...new Set([latestLive?.id, latestDry?.id].filter(Boolean))];
+        if (!ids.length) return [];
+
+        const { data: runs } = await supabase
+            .from('eval_runs')
+            .select('id, dry_run, results')
+            .in('id', ids);
+
+        if (!runs?.length) return [];
+
+        // Build per-icon map — dry run first (baseline), then overlay live quality scores
+        const iconMap = new Map();
+        const sorted = [...runs].sort((a, b) => (a.dry_run ? 1 : 0) - (b.dry_run ? 1 : 0)); // dry first, live second
+
+        for (const run of sorted) {
+            for (const r of (run.results || [])) {
+                const existing = iconMap.get(r.caseId);
+                if (!existing) {
+                    iconMap.set(r.caseId, JSON.parse(JSON.stringify(r)));
+                } else if (!run.dry_run) {
+                    // Overlay quality metrics from the live run
+                    const liveQuality = r.metrics.filter(
+                        m => ['semantic', 'design', 'tags'].includes(m.metric) && !m.details?.skipped
+                    );
+                    for (const lm of liveQuality) {
+                        const idx = existing.metrics.findIndex(m => m.metric === lm.metric);
+                        if (idx >= 0) existing.metrics[idx] = lm;
+                    }
+                    // Recalculate overallPass after merge
+                    const sem = existing.metrics.find(m => m.metric === 'semantic');
+                    const des = existing.metrics.find(m => m.metric === 'design');
+                    const llmAvailable = !sem?.details?.skipped;
+                    existing.overallPass = llmAvailable
+                        ? (sem?.pass ?? false) && (des?.pass ?? false)
+                        : existing.metrics.filter(m => !m.details?.skipped).every(m => m.pass);
+                }
+            }
+        }
+
+        // Convert to icon_scores row format (same shape the frontend expects)
+        const g = (r, name) => r.metrics?.find(m => m.metric === name) ?? null;
+        return Array.from(iconMap.values()).map(r => ({
+            icon_id: r.caseId,
+            name: r.testCase?.name ?? r.caseId,
+            structural: g(r, 'structural'),
+            svg_path:   g(r, 'svg-path'),
+            bounds:     g(r, 'bounds'),
+            complexity: g(r, 'complexity'),
+            semantic:   g(r, 'semantic'),
+            design:     g(r, 'design'),
+            tags:       g(r, 'tags'),
+            last_live_run_at: latestLive ? 'reconstructed' : null,
+        }));
+    } catch (err) {
+        console.error('getIconScores fallback error:', err);
+        return [];
+    }
+}
+
 export async function saveEvalRun(run) {
     if (supabase) {
         try {

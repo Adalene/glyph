@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PORT = 3001;
+const PORT = parseInt(process.env.PORT || '3001', 10);
 
 // Load .env file into process.env (no external deps needed)
 const envPath = path.join(__dirname, '.env');
