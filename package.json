@@ -8,7 +8,15 @@
   },
   "type": "module",
   "license": "MIT",
+  "scripts": {
+    "dev": "node server.js",
+    "eval": "node evals/runner.js",
+    "eval:dry": "node evals/runner.js --dry-run"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.97.0"
+  },
+  "devDependencies": {
+    "@anthropic-ai/sdk": "^0.27.3"
   }
 }

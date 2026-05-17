@@ -49,6 +49,62 @@ export async function getIcons() {
     return baseIcons;
 }
 
+export async function getEvalRuns(limit = 20) {
+    if (supabase) {
+        try {
+            const { data, error } = await supabase
+                .from('eval_runs')
+                .select('id, timestamp, total, passed, summary, dry_run, created_at')
+                .order('created_at', { ascending: false })
+                .limit(limit);
+            if (!error && data) return data;
+        } catch (err) {
+            console.error('Supabase eval_runs fetch error:', err);
+        }
+    }
+    return [];
+}
+
+export async function getEvalRun(id) {
+    if (supabase) {
+        try {
+            const { data, error } = await supabase
+                .from('eval_runs')
+                .select('*')
+                .eq('id', id)
+                .single();
+            if (!error && data) return data;
+        } catch (err) {
+            console.error('Supabase getEvalRun error:', err);
+        }
+    }
+    return null;
+}
+
+export async function saveEvalRun(run) {
+    if (supabase) {
+        try {
+            const { data, error } = await supabase
+                .from('eval_runs')
+                .insert([{
+                    timestamp: run.timestamp,
+                    total: run.total,
+                    passed: run.passed,
+                    summary: run.summary,
+                    results: run.results,
+                    dry_run: run.dryRun ?? false,
+                }])
+                .select('id')
+                .single();
+            if (!error && data) return data.id;
+            console.error('Supabase eval_runs insert error:', error?.message);
+        } catch (err) {
+            console.error('Supabase saveEvalRun error:', err);
+        }
+    }
+    return null;
+}
+
 export async function saveIcon(icon) {
     // 1. Save to Supabase
     if (supabase) {
