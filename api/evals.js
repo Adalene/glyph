@@ -46,8 +46,10 @@ function buildSummary(allResults) {
 }
 
 async function handlePost(req, res) {
-  const { dryRun = true, maxCases } = req.body || {};
-  const effectiveMax = maxCases ?? Infinity;
+  const { dryRun = true, maxCases, iconId } = req.body || {};
+  // Single-icon live run: always live, ignore maxCases
+  const effectiveDryRun = iconId ? false : dryRun;
+  const effectiveMax = iconId ? 1 : (maxCases ?? Infinity);
 
   // Server-Sent Events setup
   res.setHeader('Content-Type', 'text/event-stream');
@@ -85,11 +87,12 @@ async function handlePost(req, res) {
     ]);
 
     const icons = await getIcons();
-    const testCases = buildCasesFromIcons(icons, effectiveMax);
+    const filtered = iconId ? icons.filter(i => i.id === iconId) : icons;
+    const testCases = buildCasesFromIcons(filtered, effectiveMax);
 
-    // Send all icons for UI pre-population, sampled subset will be evaluated
-    const allIconMeta = icons.map(ic => ({ id: ic.id, name: ic.name, category: ic.category }));
-    send({ type: 'start', total: testCases.length, dryRun, allIcons: allIconMeta });
+    // For batch runs, send all icons so UI can pre-populate the feed
+    const allIconMeta = iconId ? null : icons.map(ic => ({ id: ic.id, name: ic.name, category: ic.category }));
+    send({ type: 'start', total: testCases.length, dryRun: effectiveDryRun, allIcons: allIconMeta, singleIcon: !!iconId });
 
     for (const testCase of testCases) {
       const rawResponse = JSON.stringify(testCase.existingIcon);
@@ -105,9 +108,9 @@ async function handlePost(req, res) {
 
         // Run all 3 LLM judges in parallel per icon
         const [semResult, desResult, tagResult] = await Promise.all([
-          checkSemantic(testCase, pathD, dryRun),
-          checkDesign(testCase, pathD, dryRun),
-          checkTags(testCase, tags, dryRun),
+          checkSemantic(testCase, pathD, effectiveDryRun),
+          checkDesign(testCase, pathD, effectiveDryRun),
+          checkTags(testCase, tags, effectiveDryRun),
         ]);
         metrics.push(semResult, desResult, tagResult);
       } else {
@@ -130,26 +133,25 @@ async function handlePost(req, res) {
 
     const summary = buildSummary(allResults);
     const overallPassed = allResults.filter(r => r.overallPass).length;
-    send({ type: 'done', summary, total: allResults.length, passed: overallPassed, dryRun });
+    send({ type: 'done', summary, total: allResults.length, passed: overallPassed, dryRun: effectiveDryRun });
 
   } catch (err) {
     send({ type: 'error', message: err.message });
   } finally {
-    // Always persist whatever completed — full run or partial — so results aren't lost
     if (allResults.length > 0) {
       const summary = buildSummary(allResults);
       const overallPassed = allResults.filter(r => r.overallPass).length;
       await Promise.all([
-        saveEvalRun({
+        // Don't save single-icon live runs as top-level eval_runs history
+        ...(iconId ? [] : [saveEvalRun({
           timestamp: new Date().toISOString(),
-          dryRun,
+          dryRun: effectiveDryRun,
           total: allResults.length,
           passed: overallPassed,
           summary,
           results: allResults,
-        }).catch(e => console.error('saveEvalRun error:', e)),
-        // Upsert per-icon latest scores — tech always, quality only on live runs
-        upsertIconScores(allResults, dryRun).catch(e => console.error('upsertIconScores error:', e)),
+        }).catch(e => console.error('saveEvalRun error:', e))]),
+        upsertIconScores(allResults, effectiveDryRun).catch(e => console.error('upsertIconScores error:', e)),
       ]);
     }
     res.end();

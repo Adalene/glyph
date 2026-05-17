@@ -505,6 +505,34 @@
     .detail-tech-info.pass { color: var(--pass); }
     .detail-tech-info.fail { color: var(--fail); }
     .detail-tech-info.skip { color: var(--muted); }
+    .detail-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 10px 16px 14px;
+      border-top: 1px solid var(--border);
+      margin-top: 4px;
+    }
+    .live-note {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 0.3px;
+    }
+    .live-btn {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.8px;
+      background: transparent;
+      color: var(--accent2);
+      border: 1px solid var(--accent2);
+      padding: 5px 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .live-btn:hover:not(:disabled) { background: var(--accent2); color: #000; }
+    .live-btn:disabled { opacity: 0.5; cursor: default; border-color: var(--muted); color: var(--muted); }
     .feed-status {
       font-family: 'DM Mono', monospace;
       font-size: 9px;
@@ -945,18 +973,14 @@ Pass threshold: score ≥ 3. badTags lists any clearly wrong tags.</pre>
 
   <!-- Run Controls -->
   <div class="run-panel">
-    <div class="mode-toggle" role="group" aria-label="Eval mode">
-      <button class="mode-btn active" id="btn-dry" onclick="setMode('dry')">DRY RUN</button>
-      <button class="mode-btn" id="btn-live" onclick="setMode('live')">LIVE</button>
-    </div>
     <button class="run-btn" id="run-btn" onclick="runEvals()">
       <svg id="run-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <polygon points="5 3 19 12 5 21 5 3"/>
       </svg>
-      <span id="run-label">RUN EVALS</span>
+      <span id="run-label">RUN TECH CHECKS</span>
     </button>
     <div class="run-meta" id="run-meta">
-      <strong id="case-count">—</strong> icons &middot; <span id="mode-note">no API calls</span>
+      <strong id="case-count">—</strong> icons &middot; no API calls
     </div>
     <button class="nav-btn" id="refresh-btn" onclick="refreshIcons()" title="Reload icons and latest scores">↻ REFRESH</button>
   </div>
@@ -1015,8 +1039,8 @@ Pass threshold: score ≥ 3. badTags lists any clearly wrong tags.</pre>
 
   <script>
     // ── State ──
-    let mode = 'dry'; // 'dry' | 'live'
     let running = false;
+    let liveRunning = new Set(); // caseIds currently being live-scored
     let total = 0;
     let completed = 0;
     let passed = 0;
@@ -1079,18 +1103,7 @@ Pass threshold: score ≥ 3. badTags lists any clearly wrong tags.</pre>
       btn.textContent = '↻ REFRESH';
     }
 
-    // ── Mode ──
-    function setMode(m) {
-      mode = m;
-      document.getElementById('btn-dry').classList.toggle('active', m === 'dry');
-      document.getElementById('btn-live').classList.toggle('active', m === 'live');
-      document.getElementById('mode-note').textContent = m === 'dry'
-        ? 'no API calls'
-        : 'calls Claude — ~$0.05 per run';
-      document.getElementById('summary-label').textContent = m === 'live' ? 'QUALITY SCORE' : 'TECH SCORE';
-    }
-
-    // ── Render metric sidebar rows ──
+// ── Render metric sidebar rows ──
     function renderMetricRows(summary) {
       const container = document.getElementById('metric-rows');
       let html = '';
@@ -1150,7 +1163,7 @@ Pass threshold: score ≥ 3. badTags lists any clearly wrong tags.</pre>
       const runBtn = document.getElementById('run-btn');
       runBtn.disabled = true;
       runBtn.classList.add('running');
-      document.getElementById('run-label').textContent = 'RUNNING…';
+      document.getElementById('run-label').textContent = 'CHECKING…';
       document.getElementById('run-icon').innerHTML = '<circle cx="12" cy="12" r="3" fill="currentColor"/>';
 
       document.getElementById('progress-wrap').classList.add('visible');
@@ -1158,9 +1171,8 @@ Pass threshold: score ≥ 3. badTags lists any clearly wrong tags.</pre>
       document.getElementById('progress-count').textContent = `0 / …`;
       document.getElementById('progress-text').textContent = 'Running…';
 
-      // SSE via fetch + ReadableStream
-      const isDry = mode === 'dry';
-      const body = JSON.stringify({ dryRun: isDry });
+      // Tech checks only — always dry
+      const body = JSON.stringify({ dryRun: true });
       fetch('/api/evals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body })
         .then(res => {
           const reader = res.body.getReader();
@@ -1309,9 +1321,18 @@ Pass threshold: score ≥ 3. badTags lists any clearly wrong tags.</pre>
         </div>`;
       }).join('');
 
+      const sem = result.metrics?.find(m => m.metric === 'semantic');
+      const hasLiveScore = sem && !sem.details?.skipped;
+      const liveBtnLabel = hasLiveScore ? '↻ RE-SCORE' : '▶ RUN LIVE';
+      const liveNote = hasLiveScore ? '' : '<span class="live-note">Gets concept &amp; visual scores from Claude</span>';
+
       return `<div class="detail-grid">
         <div class="detail-quality">${qualityHTML}</div>
         <div class="detail-tech">${techHTML}</div>
+      </div>
+      <div class="detail-actions">
+        ${liveNote}
+        <button class="live-btn" id="live-btn-${result.caseId}" onclick="runLiveForIcon('${result.caseId}')">${liveBtnLabel}</button>
       </div>`;
     }
 
@@ -1521,7 +1542,7 @@ Pass threshold: score ≥ 3. badTags lists any clearly wrong tags.</pre>
       const runBtn = document.getElementById('run-btn');
       runBtn.disabled = false;
       runBtn.classList.remove('running');
-      document.getElementById('run-label').textContent = 'RUN EVALS';
+      document.getElementById('run-label').textContent = 'RUN TECH CHECKS';
       document.getElementById('run-icon').innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
     }
 
@@ -1577,6 +1598,59 @@ Pass threshold: score ≥ 3. badTags lists any clearly wrong tags.</pre>
       caseEl.appendChild(item);
       caseEl.appendChild(detailEl);
       feed.appendChild(caseEl);
+    }
+
+    // ── Run a live eval for a single icon ──
+    async function runLiveForIcon(iconId) {
+      if (running || liveRunning.has(iconId)) return;
+      liveRunning.add(iconId);
+
+      const btn = document.getElementById('live-btn-' + iconId);
+      if (btn) { btn.disabled = true; btn.textContent = '● SCORING…'; }
+
+      try {
+        const body = JSON.stringify({ dryRun: false, iconId });
+        const res = await fetch('/api/evals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        const pump = () => reader.read().then(({ done, value }) => {
+          if (done) return;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop();
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            try {
+              const ev = JSON.parse(line.slice(6));
+              if (ev.type === 'case') {
+                const caseEl = document.getElementById('case-' + ev.caseId);
+                const wasOpen = caseEl?.classList.contains('open');
+                if (caseEl) updateCaseRow(caseEl, ev);
+                // Re-open and re-render detail with fresh scores
+                if (wasOpen && caseEl) {
+                  caseEl.classList.add('open');
+                  const detailEl = caseEl.querySelector('.feed-detail');
+                  if (detailEl) detailEl.innerHTML = buildDetailHTML(ev);
+                }
+              }
+              if (ev.type === 'done') {
+                showToast(`Live scored: ${ev.passed ? 'PASS' : 'FAIL'}`);
+                loadScores({ updateSidebarOnly: true });
+              }
+              if (ev.type === 'error') showToast('Error: ' + ev.message);
+            } catch {}
+          }
+          return pump();
+        });
+        await pump();
+      } catch (err) {
+        showToast('Live score error: ' + err.message);
+      } finally {
+        liveRunning.delete(iconId);
+        // Button is now re-rendered inside the updated detail panel — no need to restore it
+      }
     }
 
     // ── Load aggregated all-time scores from icon_scores table ──

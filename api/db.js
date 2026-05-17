@@ -117,53 +117,52 @@ export async function upsertIconScores(results, dryRun) {
 export async function getIconScores() {
     if (!supabase) return [];
 
-    // Try icon_scores table first
+    // Get whatever is in icon_scores (may be partial — only icons that have been explicitly scored)
+    let tableScores = [];
     try {
-        const { data, error } = await supabase
-            .from('icon_scores')
-            .select('*');
-        if (!error && data?.length) return data;
-        // Table missing or empty — fall through to reconstruct from eval_runs
-        if (error) console.error('getIconScores (will fallback):', error.message);
+        const { data, error } = await supabase.from('icon_scores').select('*');
+        if (!error && data) tableScores = data;
+        else if (error) console.error('getIconScores (will supplement from eval_runs):', error.message);
     } catch (err) {
-        console.error('getIconScores exception (will fallback):', err);
+        console.error('getIconScores exception:', err);
     }
 
-    // Fallback: reconstruct per-icon merged scores from stored eval_runs results.
-    // Finds the latest live run (for quality scores) + latest dry run (for tech scores)
-    // and merges them so both concept/visual and tech metrics show up.
+    // Supplement from eval_runs for any icons not yet in icon_scores.
+    // Finds the latest live run (quality) + latest dry run (tech) and merges them.
     try {
+        const scoredIds = new Set(tableScores.map(s => s.icon_id));
+
         const { data: runMeta } = await supabase
             .from('eval_runs')
             .select('id, dry_run, created_at')
             .order('created_at', { ascending: false })
             .limit(20);
 
-        if (!runMeta?.length) return [];
+        if (!runMeta?.length) return tableScores;
 
         const latestLive = runMeta.find(r => !r.dry_run);
         const latestDry  = runMeta.find(r =>  r.dry_run);
         const ids = [...new Set([latestLive?.id, latestDry?.id].filter(Boolean))];
-        if (!ids.length) return [];
+        if (!ids.length) return tableScores;
 
         const { data: runs } = await supabase
             .from('eval_runs')
             .select('id, dry_run, results')
             .in('id', ids);
 
-        if (!runs?.length) return [];
+        if (!runs?.length) return tableScores;
 
-        // Build per-icon map — dry run first (baseline), then overlay live quality scores
+        // Build per-icon map from eval_runs — dry first, then overlay live quality
         const iconMap = new Map();
-        const sorted = [...runs].sort((a, b) => (a.dry_run ? 1 : 0) - (b.dry_run ? 1 : 0)); // dry first, live second
+        const sorted = [...runs].sort((a, b) => (a.dry_run ? 1 : 0) - (b.dry_run ? 1 : 0));
 
         for (const run of sorted) {
             for (const r of (run.results || [])) {
+                if (scoredIds.has(r.caseId)) continue; // already in icon_scores — skip
                 const existing = iconMap.get(r.caseId);
                 if (!existing) {
                     iconMap.set(r.caseId, JSON.parse(JSON.stringify(r)));
                 } else if (!run.dry_run) {
-                    // Overlay quality metrics from the live run
                     const liveQuality = r.metrics.filter(
                         m => ['semantic', 'design', 'tags'].includes(m.metric) && !m.details?.skipped
                     );
@@ -171,7 +170,6 @@ export async function getIconScores() {
                         const idx = existing.metrics.findIndex(m => m.metric === lm.metric);
                         if (idx >= 0) existing.metrics[idx] = lm;
                     }
-                    // Recalculate overallPass after merge
                     const sem = existing.metrics.find(m => m.metric === 'semantic');
                     const des = existing.metrics.find(m => m.metric === 'design');
                     const llmAvailable = !sem?.details?.skipped;
@@ -182,9 +180,9 @@ export async function getIconScores() {
             }
         }
 
-        // Convert to icon_scores row format (same shape the frontend expects)
+        // Convert reconstructed results to icon_scores row format
         const g = (r, name) => r.metrics?.find(m => m.metric === name) ?? null;
-        return Array.from(iconMap.values()).map(r => ({
+        const reconstructed = Array.from(iconMap.values()).map(r => ({
             icon_id: r.caseId,
             name: r.testCase?.name ?? r.caseId,
             structural: g(r, 'structural'),
@@ -196,9 +194,11 @@ export async function getIconScores() {
             tags:       g(r, 'tags'),
             last_live_run_at: latestLive ? 'reconstructed' : null,
         }));
+
+        return [...tableScores, ...reconstructed];
     } catch (err) {
-        console.error('getIconScores fallback error:', err);
-        return [];
+        console.error('getIconScores supplement error:', err);
+        return tableScores;
     }
 }
 
