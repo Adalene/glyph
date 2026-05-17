@@ -832,7 +832,7 @@
       <span class="explainer-chevron">▼</span>
     </button>
     <div class="explainer-body" id="explainer-body">
-      <p class="explainer-intro">Each icon in the Glyph library is evaluated against 7 quality metrics. The first 4 are <strong style="color:var(--accent2)">deterministic</strong> — instant, free, rule-based checks. The last 3 use an <strong style="color:var(--gen)">LLM judge</strong> (Claude Haiku) to assess visual and semantic quality. Dry Run skips LLM metrics; Live mode runs all 7.</p>
+      <p class="explainer-intro">Every generated icon is automatically checked against 7 quality standards before it enters the library. The first 4 are <strong style="color:var(--accent2)">instant checks</strong> — fast, rule-based tests that run for free. The last 3 use an <strong style="color:var(--gen)">AI reviewer</strong> (Claude Haiku) to judge whether the icon actually looks right and makes sense. Dry Run skips the AI review; Live mode runs all 7.</p>
 
       <div class="metrics-grid">
 
@@ -841,8 +841,8 @@
             <span class="metric-card-name">Structural</span>
             <span class="type-chip det">DETERMINISTIC</span>
           </div>
-          <p class="metric-card-desc">Validates that the icon data is parseable JSON with a non-empty <code style="color:var(--accent2)">path</code> string and a <code style="color:var(--accent2)">tags</code> array of strings. The foundation — everything else depends on this passing.</p>
-          <div class="metric-card-pass">Pass: <strong>path exists + tags is string array</strong></div>
+          <p class="metric-card-desc">Confirms the icon was generated with all the required pieces — a drawing path and a list of search tags. If this fails, the icon is essentially empty or broken and can't be used at all.</p>
+          <div class="metric-card-pass">Pass: <strong>drawing path and tags are present</strong></div>
         </div>
 
         <div class="metric-card">
@@ -850,8 +850,8 @@
             <span class="metric-card-name">SVG Syntax</span>
             <span class="type-chip det">DETERMINISTIC</span>
           </div>
-          <p class="metric-card-desc">Tokenizes the SVG <code style="color:var(--accent2)">d</code> attribute and checks that only recognized path commands are used (M L H V C S Q T A Z and their lowercase variants), and that the path starts with M or m.</p>
-          <div class="metric-card-pass">Pass: <strong>zero unknown commands</strong></div>
+          <p class="metric-card-desc">Checks that the icon's drawing instructions are written in valid, standard format — the kind every browser and design tool understands. Garbled or non-standard instructions would make the icon invisible or broken.</p>
+          <div class="metric-card-pass">Pass: <strong>drawing instructions are valid</strong></div>
         </div>
 
         <div class="metric-card">
@@ -859,8 +859,8 @@
             <span class="metric-card-name">Bounds 2–22</span>
             <span class="type-chip det">DETERMINISTIC</span>
           </div>
-          <p class="metric-card-desc">Checks that all <em>absolute</em> coordinates (uppercase commands: M L H V C S Q T A) stay within [2, 22]. Relative coordinates (lowercase l, h, v, c…) are legitimately negative or large and are skipped.</p>
-          <div class="metric-card-pass">Pass: <strong>zero absolute coordinates outside [2, 22]</strong></div>
+          <p class="metric-card-desc">Makes sure the icon fits neatly within its canvas. If parts of the drawing stray too close to the edges or outside the frame entirely, they'll get clipped or look misaligned when placed alongside other icons.</p>
+          <div class="metric-card-pass">Pass: <strong>icon fits within its frame</strong></div>
         </div>
 
         <div class="metric-card">
@@ -868,8 +868,8 @@
             <span class="metric-card-name">Complexity</span>
             <span class="type-chip det">DETERMINISTIC</span>
           </div>
-          <p class="metric-card-desc">Counts the total number of path commands. Too few (under 3) suggests a degenerate or empty icon. Too many (over 50) produces an icon that's too dense to be legible at 16px — the typical minimum render size.</p>
-          <div class="metric-card-pass">Pass: <strong>3 ≤ commands ≤ 50</strong></div>
+          <p class="metric-card-desc">Checks that the icon has the right amount of detail — not so simple it's barely a shape, and not so intricate it turns into a blur at small sizes. Icons need to stay readable even when displayed at 16px, about the size of a favicon.</p>
+          <div class="metric-card-pass">Pass: <strong>detail level is in the right range</strong></div>
         </div>
 
         <div class="metric-card">
@@ -877,7 +877,7 @@
             <span class="metric-card-name">Semantic</span>
             <span class="type-chip llm">LLM JUDGE</span>
           </div>
-          <p class="metric-card-desc">A Claude Haiku judge evaluates whether the SVG path represents a recognizable, conceptually appropriate icon for its name. Scores 0–5; icons scoring below 3 fail.</p>
+          <p class="metric-card-desc">An AI reviewer looks at the icon and asks: does this actually look like what it's supposed to be? A "wifi" icon that looks like a triangle would fail here. Scored 0–5; anything below 3 is rejected.</p>
           <div class="metric-card-pass" style="margin-bottom:0">Pass: <strong>score ≥ 3 / 5</strong></div>
           <div class="prompt-block">
             <button class="prompt-toggle" onclick="togglePrompt(this)"><span class="prompt-chevron">▶</span> View judge prompt</button>
@@ -907,7 +907,7 @@ Score: 5=perfect match, 4=good, 3=recognizable, 2=weak,
             <span class="metric-card-name">Design</span>
             <span class="type-chip llm">LLM JUDGE</span>
           </div>
-          <p class="metric-card-desc">Evaluates visual quality across four sub-dimensions: representation, guideline compliance (stroke-only, geometric, minimal control points), aesthetics (balance, optical centering, legibility at 16px), and overall polish.</p>
+          <p class="metric-card-desc">An AI reviewer judges whether the icon looks polished and fits the library's visual style — clean lines, balanced proportions, optically centered, and legible at small sizes. Think of it as a senior designer giving a quick approval or rejection.</p>
           <div class="metric-card-pass" style="margin-bottom:0">Pass: <strong>overall score ≥ 3 / 5</strong></div>
           <div class="prompt-block">
             <button class="prompt-toggle" onclick="togglePrompt(this)"><span class="prompt-chevron">▶</span> View judge prompt</button>
@@ -944,7 +944,7 @@ Score: 5=production-ready, 4=good, 3=acceptable,
             <span class="metric-card-name">Tags</span>
             <span class="type-chip llm">LLM JUDGE</span>
           </div>
-          <p class="metric-card-desc">Evaluates whether the icon's tags are accurate, relevant, and useful for search. Checks that tags include the core concept, useful synonyms, and related terms — and flags any that are misleading or off-topic.</p>
+          <p class="metric-card-desc">An AI reviewer checks whether the search tags actually help people find this icon. Good tags cover the main concept plus common synonyms and related terms. Tags that are vague, wrong, or off-topic get flagged.</p>
           <div class="metric-card-pass" style="margin-bottom:0">Pass: <strong>score ≥ 3 / 5</strong></div>
           <div class="prompt-block">
             <button class="prompt-toggle" onclick="togglePrompt(this)"><span class="prompt-chevron">▶</span> View judge prompt</button>
