@@ -25,6 +25,8 @@
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    ::selection { background: rgba(192, 132, 252, 0.35); color: var(--text); }
+
     body {
       background: var(--bg);
       color: var(--text);
@@ -323,7 +325,7 @@
       word-break: break-word;
     }
     .prompt-text.open { display: block; }
-    .prompt-highlight { color: var(--accent); }
+    .prompt-highlight { color: var(--gen); background: rgba(192, 132, 252, 0.1); padding: 0 3px; border-radius: 2px; }
 
     /* ── Progress Bar ── */
     .progress-bar-wrap {
