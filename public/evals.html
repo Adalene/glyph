@@ -1589,6 +1589,16 @@ Pass threshold: score ≥ 3. badTags lists any clearly wrong tags.</pre>
         if (!scoresRes.ok || !iconsRes.ok) return;
         const [{ scores }, iconsData] = await Promise.all([scoresRes.json(), iconsRes.json()]);
         const allIcons = iconsData.icons ?? iconsData;
+
+        // Fallback: if icon_scores table is empty, load from the latest past run
+        if (!scores?.length && !updateSidebarOnly) {
+          const runsRes = await fetch('/api/evals');
+          if (runsRes.ok) {
+            const { runs } = await runsRes.json();
+            if (runs?.length) { await loadRun(runs[0].id); return; }
+          }
+        }
+
         const scoreMap = new Map((scores || []).map(s => [s.icon_id, s]));
         const scoredResults = (scores || []).map(s => scoreToResult(s, null));
 
