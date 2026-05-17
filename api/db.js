@@ -152,17 +152,29 @@ export async function getIconScores() {
 
         if (!runs?.length) return tableScores;
 
-        // Build per-icon map from eval_runs — dry first, then overlay live quality
+        // Icons that lack quality scores in icon_scores need supplementing from eval_runs
+        const needsQuality = new Set(
+            tableScores
+                .filter(s => !s.semantic || s.semantic?.details?.skipped)
+                .map(s => s.icon_id)
+        );
+
+        // Build per-icon map from eval_runs — dry first, live second to overlay quality
         const iconMap = new Map();
         const sorted = [...runs].sort((a, b) => (a.dry_run ? 1 : 0) - (b.dry_run ? 1 : 0));
 
         for (const run of sorted) {
             for (const r of (run.results || [])) {
-                if (scoredIds.has(r.caseId)) continue; // already in icon_scores — skip
+                const inTable = scoredIds.has(r.caseId);
+                const wantsQuality = needsQuality.has(r.caseId);
+
+                if (inTable && !wantsQuality) continue; // icon_scores already complete for this icon
+
                 const existing = iconMap.get(r.caseId);
                 if (!existing) {
                     iconMap.set(r.caseId, JSON.parse(JSON.stringify(r)));
                 } else if (!run.dry_run) {
+                    // Overlay quality metrics from the live run
                     const liveQuality = r.metrics.filter(
                         m => ['semantic', 'design', 'tags'].includes(m.metric) && !m.details?.skipped
                     );
@@ -195,7 +207,23 @@ export async function getIconScores() {
             last_live_run_at: latestLive ? 'reconstructed' : null,
         }));
 
-        return [...tableScores, ...reconstructed];
+        // For icons already in icon_scores that needed quality, overlay the reconstructed quality
+        const tableMap = new Map(tableScores.map(s => [s.icon_id, s]));
+        for (const rec of reconstructed) {
+            const tableEntry = tableMap.get(rec.icon_id);
+            if (tableEntry && needsQuality.has(rec.icon_id)) {
+                // Overlay quality scores onto the table entry
+                tableEntry.semantic = rec.semantic;
+                tableEntry.design   = rec.design;
+                tableEntry.tags     = rec.tags;
+                tableEntry.last_live_run_at = rec.last_live_run_at;
+            }
+        }
+
+        // Icons not in icon_scores at all get added as new entries
+        const newEntries = reconstructed.filter(r => !scoredIds.has(r.icon_id));
+
+        return [...tableScores, ...newEntries];
     } catch (err) {
         console.error('getIconScores supplement error:', err);
         return tableScores;
