@@ -1293,17 +1293,23 @@ Pass threshold: score ≥ 3. badTags lists any clearly wrong tags.</pre>
 
       const TECH_DEFS = [
         { name: 'structural', letter: 'S', label: 'Structural',
-          detail: d => d?.checkedFields ? `${d.checkedFields} fields` : 'JSON + fields valid' },
+          detail: d => 'Drawing path and tags present' },
         { name: 'svg-path',   letter: 'P', label: 'SVG Syntax',
-          detail: d => d?.commandCount != null ? `${d.commandCount} commands` : '' },
+          detail: d => d?.commandCount != null ? `Valid · ${d.commandCount} drawing steps` : 'Valid format' },
         { name: 'bounds',     letter: 'B', label: 'Bounds 2–22',
           detail: d => {
             if (!d) return '';
-            if (d.violationCount > 0) return `${d.violationCount} violation${d.violationCount > 1 ? 's' : ''}: ${(d.violations || []).slice(0, 5).join(', ')}`;
-            return `${d.checkedCoordinates ?? '?'} coords OK`;
+            if (d.violationCount > 0) return `${d.violationCount} point${d.violationCount > 1 ? 's' : ''} outside the frame`;
+            return 'Fits within canvas';
           }},
         { name: 'complexity', letter: 'C', label: 'Complexity',
-          detail: d => d?.commandCount != null ? `${d.commandCount} commands` : '' },
+          detail: d => {
+            if (d?.commandCount == null) return '';
+            const n = d.commandCount;
+            if (n < 3) return `Too simple (${n} steps)`;
+            if (n > 50) return `Too detailed (${n} steps)`;
+            return `Good detail level · ${n} steps`;
+          }},
         { name: 'tags',       letter: 'T', label: 'Tags',
           detail: d => {
             if (!d || d.skipped) return 'skipped';
