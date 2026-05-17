@@ -26,8 +26,25 @@ async function handleGet(req, res) {
   }
 }
 
+const METRIC_NAMES = ['structural', 'svg-path', 'bounds', 'complexity', 'semantic', 'design', 'tags'];
+
+function buildSummary(allResults) {
+  const summary = {};
+  for (const m of METRIC_NAMES) {
+    const mResults = allResults.map(r => r.metrics.find(x => x.metric === m));
+    summary[m] = {
+      passed: mResults.filter(x => x?.pass).length,
+      total: allResults.length,
+      skipped: mResults.filter(x => x?.details?.skipped).length,
+    };
+  }
+  return summary;
+}
+
 async function handlePost(req, res) {
   const { dryRun = true, maxCases } = req.body || {};
+  // Default to 30 icons in LIVE mode to keep runs fast; DRY runs all icons
+  const effectiveMax = dryRun ? (maxCases ?? Infinity) : (maxCases ?? 30);
 
   // Server-Sent Events setup
   res.setHeader('Content-Type', 'text/event-stream');
@@ -40,6 +57,8 @@ async function handlePost(req, res) {
     res.write(`data: ${JSON.stringify(data)}\n\n`);
     if (res.flush) res.flush();
   };
+
+  const allResults = [];
 
   try {
     const [
@@ -62,18 +81,15 @@ async function handlePost(req, res) {
       import('../evals/metrics/tags.js'),
     ]);
 
-    // Fetch real icons from the library (Supabase + local base icons)
     const icons = await getIcons();
-    const testCases = buildCasesFromIcons(icons, maxCases);
+    const testCases = buildCasesFromIcons(icons, effectiveMax);
 
-    send({ type: 'start', total: testCases.length, dryRun });
-
-    const allResults = [];
+    // Send all icons for UI pre-population, sampled subset will be evaluated
+    const allIconMeta = icons.map(ic => ({ id: ic.id, name: ic.name, category: ic.category }));
+    send({ type: 'start', total: testCases.length, dryRun, allIcons: allIconMeta });
 
     for (const testCase of testCases) {
-      // Use the icon's existing path + tags directly — no generation step
       const rawResponse = JSON.stringify(testCase.existingIcon);
-
       const structResult = checkStructural(rawResponse);
       const metrics = [structResult];
 
@@ -83,58 +99,52 @@ async function handlePost(req, res) {
         metrics.push(svgResult);
         metrics.push(checkBounds(pathD));
         metrics.push(checkComplexity(svgResult.commandCount ?? 0));
-        // LLM judges only in live mode
-        metrics.push(await checkSemantic(testCase, pathD, dryRun));
-        metrics.push(await checkDesign(testCase, pathD, dryRun));
-        metrics.push(await checkTags(testCase, tags, dryRun));
+
+        // Run all 3 LLM judges in parallel per icon
+        const [semResult, desResult, tagResult] = await Promise.all([
+          checkSemantic(testCase, pathD, dryRun),
+          checkDesign(testCase, pathD, dryRun),
+          checkTags(testCase, tags, dryRun),
+        ]);
+        metrics.push(semResult, desResult, tagResult);
       } else {
         for (const m of ['svg-path', 'bounds', 'complexity', 'semantic', 'design', 'tags']) {
           metrics.push({ metric: m, pass: false, details: { error: 'Skipped (structural failed)' } });
         }
       }
 
-      // Quality metrics (semantic + design) are what matter most.
-      // Tech checks are informational only. In dry-run (skipped), fall back to tech.
       const semanticResult = metrics.find(m => m.metric === 'semantic');
       const designResult = metrics.find(m => m.metric === 'design');
       const llmAvailable = !semanticResult?.details?.skipped;
       const overallPass = llmAvailable
         ? (semanticResult?.pass ?? false) && (designResult?.pass ?? false)
         : metrics.filter(m => !m.details?.skipped).every(m => m.pass);
+
       const result = { caseId: testCase.id, testCase, overallPass, metrics };
       allResults.push(result);
       send({ type: 'case', ...result });
     }
 
-    // Per-metric summary
-    const METRIC_NAMES = ['structural', 'svg-path', 'bounds', 'complexity', 'semantic', 'design', 'tags'];
-    const summary = {};
-    for (const m of METRIC_NAMES) {
-      const mResults = allResults.map(r => r.metrics.find(x => x.metric === m));
-      summary[m] = {
-        passed: mResults.filter(x => x?.pass).length,
-        total: allResults.length,
-        skipped: mResults.filter(x => x?.details?.skipped).length,
-      };
-    }
-
+    const summary = buildSummary(allResults);
     const overallPassed = allResults.filter(r => r.overallPass).length;
-    const runData = {
-      timestamp: new Date().toISOString(),
-      dryRun,
-      total: allResults.length,
-      passed: overallPassed,
-      summary,
-      results: allResults,
-    };
-
-    // Persist to Supabase
-    await saveEvalRun(runData);
-
     send({ type: 'done', summary, total: allResults.length, passed: overallPassed, dryRun });
+
   } catch (err) {
     send({ type: 'error', message: err.message });
+  } finally {
+    // Always persist whatever completed — full run or partial — so results aren't lost
+    if (allResults.length > 0) {
+      const summary = buildSummary(allResults);
+      const overallPassed = allResults.filter(r => r.overallPass).length;
+      await saveEvalRun({
+        timestamp: new Date().toISOString(),
+        dryRun,
+        total: allResults.length,
+        passed: overallPassed,
+        summary,
+        results: allResults,
+      }).catch(e => console.error('saveEvalRun error:', e));
+    }
+    res.end();
   }
-
-  res.end();
 }

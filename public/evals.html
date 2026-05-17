@@ -408,6 +408,10 @@
     .feed-item:hover { background: var(--surface2); }
     .feed-item.pass { border-left-color: var(--pass); }
     .feed-item.fail { border-left-color: var(--fail); }
+    .feed-item.pending { opacity: 0.35; cursor: default; }
+    .feed-item.pending:hover { background: var(--surface); }
+    .feed-status.pending { color: var(--muted); }
+    .feed-case.pending { animation: none; }
     .feed-chevron {
       font-size: 8px;
       color: var(--muted);
@@ -1068,9 +1072,15 @@ Pass threshold: score ≥ 3. badTags lists any clearly wrong tags.</pre>
       mode = m;
       document.getElementById('btn-dry').classList.toggle('active', m === 'dry');
       document.getElementById('btn-live').classList.toggle('active', m === 'live');
+      const totalIcons = parseInt(document.getElementById('case-count').textContent) || 0;
       document.getElementById('mode-note').textContent = m === 'dry'
         ? 'no API calls'
-        : 'calls Claude — ~$0.20';
+        : 'per run · calls Claude — ~$0.05';
+      if (m === 'live') {
+        document.getElementById('case-count').textContent = '30';
+      } else {
+        loadIconCount();
+      }
       document.getElementById('summary-label').textContent = m === 'live' ? 'QUALITY SCORE' : 'TECH SCORE';
     }
 
@@ -1123,9 +1133,10 @@ Pass threshold: score ≥ 3. badTags lists any clearly wrong tags.</pre>
       resultCache.clear();
       for (const m of METRICS) metricState[m.name] = { passed: 0, total: 0, skipped: 0 };
 
-      // Reset UI
+      // Reset UI (feed will be cleared + pre-filled by preFillFeed on 'start' event)
       document.getElementById('feed').innerHTML = '';
       document.getElementById('feed-empty')?.remove();
+      document.getElementById('feed').scrollTop = 0;
       document.getElementById('summary-score').textContent = '—';
       document.getElementById('summary-score').className = 'summary-score';
       renderMetricRows();
@@ -1142,7 +1153,8 @@ Pass threshold: score ≥ 3. badTags lists any clearly wrong tags.</pre>
       document.getElementById('progress-text').textContent = 'Running…';
 
       // SSE via fetch + ReadableStream
-      const body = JSON.stringify({ dryRun: mode === 'dry' });
+      const isDry = mode === 'dry';
+      const body = JSON.stringify({ dryRun: isDry, ...(isDry ? {} : { maxCases: 30 }) });
       fetch('/api/evals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body })
         .then(res => {
           const reader = res.body.getReader();
@@ -1319,7 +1331,7 @@ Pass threshold: score ≥ 3. badTags lists any clearly wrong tags.</pre>
       const item = document.createElement('div');
       item.className = `feed-item ${result.overallPass ? 'pass' : 'fail'}`;
       item.innerHTML = buildCaseRowHTML(result);
-      item.addEventListener('click', () => toggleDetail(result.caseId));
+      item.onclick = () => toggleDetail(result.caseId);
 
       const detailEl = document.createElement('div');
       detailEl.className = 'feed-detail';
@@ -1327,6 +1339,54 @@ Pass threshold: score ≥ 3. badTags lists any clearly wrong tags.</pre>
       caseEl.appendChild(item);
       caseEl.appendChild(detailEl);
       feed.appendChild(caseEl);
+    }
+
+    // ── Pre-fill feed with all icons as pending rows before a run ──
+    function preFillFeed(allIcons, feed) {
+      resultCache.clear();
+      feed.innerHTML = '';
+      const pendingChips = '<span class="ft-chip skip">S</span><span class="ft-chip skip">P</span><span class="ft-chip skip">B</span><span class="ft-chip skip">C</span><span class="ft-chip skip">T</span>';
+      const pendingBadges = '<span class="fq-badge skip">– CONCEPT</span><span class="fq-badge skip">– VISUAL</span>';
+      for (const icon of allIcons) {
+        const caseEl = document.createElement('div');
+        caseEl.className = 'feed-case pending';
+        caseEl.id = 'case-' + icon.id;
+
+        const item = document.createElement('div');
+        item.className = 'feed-item pending';
+        item.innerHTML = `
+          <span class="feed-status pending">–</span>
+          <div class="feed-name-group">
+            <span class="feed-name">${icon.name}</span>
+            <span class="feed-meta">${icon.id} · outline</span>
+          </div>
+          <div class="feed-quality">${pendingBadges}</div>
+          <div class="feed-tech">${pendingChips}</div>
+          <span class="feed-chevron" style="visibility:hidden">▶</span>`;
+
+        const detailEl = document.createElement('div');
+        detailEl.className = 'feed-detail';
+
+        caseEl.appendChild(item);
+        caseEl.appendChild(detailEl);
+        feed.appendChild(caseEl);
+      }
+    }
+
+    // ── Update an existing pending row in-place with a real result ──
+    function updateCaseRow(caseEl, result) {
+      resultCache.set(result.caseId, result);
+      caseEl.classList.remove('pending');
+
+      const item = caseEl.querySelector('.feed-item');
+      item.className = `feed-item ${result.overallPass ? 'pass' : 'fail'}`;
+      item.innerHTML = buildCaseRowHTML(result);
+      item.onclick = () => toggleDetail(result.caseId);
+
+      // Reset any open detail panel
+      const detailEl = caseEl.querySelector('.feed-detail');
+      if (detailEl) detailEl.innerHTML = '';
+      caseEl.classList.remove('open');
     }
 
     // ── Load a specific past run by ID and replay into feed ──
@@ -1388,6 +1448,9 @@ Pass threshold: score ≥ 3. badTags lists any clearly wrong tags.</pre>
       if (ev.type === 'start') {
         total = ev.total;
         document.getElementById('progress-count').textContent = `0 / ${total}`;
+        if (ev.allIcons?.length) {
+          preFillFeed(ev.allIcons, document.getElementById('feed'));
+        }
       }
 
       if (ev.type === 'case') {
@@ -1404,10 +1467,16 @@ Pass threshold: score ≥ 3. badTags lists any clearly wrong tags.</pre>
           }
         }
 
-        // Append feed row
+        // Update existing pending row, or append if not pre-filled
         const feed = document.getElementById('feed');
-        appendCaseToFeed(ev, feed);
-        feed.scrollTop = feed.scrollHeight;
+        const existingCase = document.getElementById('case-' + ev.caseId);
+        if (existingCase) {
+          updateCaseRow(existingCase, ev);
+          existingCase.scrollIntoView({ block: 'nearest' });
+        } else {
+          appendCaseToFeed(ev, feed);
+          feed.scrollTop = feed.scrollHeight;
+        }
 
         // Progress
         const pct = Math.round((completed / total) * 100);
