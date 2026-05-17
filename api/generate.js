@@ -1,4 +1,3 @@
-import { saveIcon } from './db.js';
 
 export default async function handler(req, res) {
   // Only allow POST
@@ -99,6 +98,7 @@ JSON Schema:
     };
 
     // Save to shared library immediately
+    const { saveIcon } = await import(process.env.EVAL === '1' ? '../evals/stubs/db.js' : './db.js');
     await saveIcon(icon);
 
     return res.status(200).json({ icon });

@@ -1,0 +1,1786 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GLYPH — Eval Dashboard</title>
+  <meta name="robots" content="noindex">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0b;
+      --surface: #111113;
+      --surface2: #18181c;
+      --border: #2a2a30;
+      --accent: #e8f060;
+      --accent2: #60e8c8;
+      --text: #f0f0ee;
+      --muted: #6b6b78;
+      --gen: #c084fc;
+      --pass: #4ade80;
+      --fail: #f87171;
+      --skip: #6b6b78;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 999;
+      opacity: 0.4;
+    }
+
+    /* ── Header ── */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 0 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      position: sticky;
+      top: 0;
+      background: rgba(10,10,11,0.92);
+      backdrop-filter: blur(12px);
+      z-index: 100;
+    }
+    .logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .logo span { color: var(--text); }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .badge {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--accent2);
+      border: 1px solid var(--accent2);
+      padding: 3px 8px;
+      border-radius: 2px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .nav-btn {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 7px 14px;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      transition: all 0.15s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .nav-btn:hover { color: var(--text); border-color: var(--text); }
+    .nav-btn.active {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+    }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 64px 48px 48px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute;
+      top: -60px; right: -80px;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(96,232,200,0.05) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(36px, 5vw, 64px);
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -2px;
+      margin-bottom: 14px;
+    }
+    h1 em { font-style: italic; color: var(--accent2); }
+    .hero-sub {
+      font-size: 15px;
+      color: var(--muted);
+      max-width: 520px;
+      line-height: 1.6;
+      font-weight: 300;
+    }
+
+    /* ── Run Panel ── */
+    .run-panel {
+      padding: 28px 48px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .mode-toggle {
+      display: flex;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .mode-btn {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      background: transparent;
+      color: var(--muted);
+      border: none;
+      padding: 9px 18px;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      transition: all 0.15s;
+    }
+    .mode-btn.active {
+      background: var(--accent2);
+      color: #000;
+    }
+    .mode-btn:first-child { border-right: 1px solid var(--border); }
+
+    .run-btn {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 10px 24px;
+      cursor: pointer;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .run-btn:hover:not(:disabled) { background: #fff; }
+    .run-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .run-btn.running { background: var(--gen); animation: pulse 1.5s ease-in-out infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .run-meta {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .run-meta strong { color: var(--text); }
+
+    /* ── Metrics Explainer ── */
+    .explainer {
+      border-bottom: 1px solid var(--border);
+    }
+    .explainer-toggle {
+      width: 100%;
+      padding: 18px 48px;
+      background: transparent;
+      border: none;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      transition: background 0.15s;
+    }
+    .explainer-toggle:hover { background: var(--surface); }
+    .explainer-toggle-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+    .explainer-chevron {
+      font-size: 10px;
+      color: var(--muted);
+      transition: transform 0.2s;
+    }
+    .explainer-toggle.open .explainer-chevron { transform: rotate(180deg); }
+    .explainer-body {
+      display: none;
+      padding: 0 48px 32px;
+      background: var(--surface);
+    }
+    .explainer-body.open { display: block; }
+    .explainer-intro {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 680px;
+      margin-bottom: 28px;
+      padding-top: 4px;
+    }
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .metric-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 16px 18px;
+    }
+    .metric-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .metric-card-name {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .type-chip {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      padding: 2px 7px;
+      border-radius: 2px;
+      letter-spacing: 0.5px;
+      font-weight: 500;
+    }
+    .type-chip.det { background: rgba(96,232,200,0.12); color: var(--accent2); }
+    .type-chip.llm { background: rgba(192,132,252,0.12); color: var(--gen); }
+    .metric-card-desc {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.55;
+      margin-bottom: 10px;
+    }
+    .metric-card-pass {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+    }
+    .metric-card-pass strong { color: var(--pass); }
+
+    .prompt-block { margin-top: 10px; }
+    .prompt-toggle {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--accent2);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      letter-spacing: 0.3px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .prompt-toggle:hover { color: var(--text); }
+    .prompt-chevron { transition: transform 0.15s; display: inline-block; }
+    .prompt-toggle.open .prompt-chevron { transform: rotate(90deg); }
+    .prompt-text {
+      display: none;
+      margin-top: 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .prompt-text.open { display: block; }
+    .prompt-highlight { color: var(--accent); }
+
+    /* ── Progress Bar ── */
+    .progress-bar-wrap {
+      display: none;
+      padding: 0 48px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .progress-bar-wrap.visible { display: block; }
+    .progress-track {
+      height: 2px;
+      background: var(--border);
+      position: relative;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--accent2);
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+    .progress-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      padding: 8px 0 10px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* ── Main layout ── */
+    .main {
+      padding: 40px 48px;
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 32px;
+      align-items: start;
+    }
+
+    /* ── Case Feed ── */
+    .feed-section {}
+    .section-title {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    .feed {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+    }
+    .feed-case { display: flex; flex-direction: column; animation: fadeUp 0.25s ease both; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .feed-item {
+      display: grid;
+      grid-template-columns: 44px 1fr auto auto 18px;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 2px solid transparent;
+      cursor: pointer;
+      user-select: none;
+    }
+    .feed-item:hover { background: var(--surface2); }
+    .feed-item.pass { border-left-color: var(--pass); }
+    .feed-item.fail { border-left-color: var(--fail); }
+    .feed-item.pending { opacity: 0.35; cursor: default; }
+    .feed-item.pending:hover { background: var(--surface); }
+    .feed-status.pending { color: var(--muted); }
+    .feed-case.pending { animation: none; }
+    .feed-chevron {
+      font-size: 8px;
+      color: var(--muted);
+      transition: transform 0.2s ease;
+      text-align: center;
+    }
+    .feed-case.open .feed-chevron { transform: rotate(90deg); }
+
+    /* ── Expandable detail panel ── */
+    .feed-detail {
+      display: none;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-top: none;
+      border-left: 2px solid var(--border);
+      padding: 14px 16px;
+    }
+    .feed-case.open .feed-detail { display: block; }
+    .feed-case.open .feed-item { border-bottom-color: transparent; }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 700px) { .detail-grid { grid-template-columns: 1fr; } }
+
+    /* Quality detail (Concept + Visual) */
+    .detail-quality { display: flex; flex-direction: column; gap: 10px; }
+    .detail-metric { display: flex; flex-direction: column; gap: 4px; }
+    .detail-metric-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .detail-metric-name {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 1px;
+      color: var(--accent2);
+    }
+    .detail-score {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      font-weight: 500;
+    }
+    .detail-score.pass { color: var(--pass); }
+    .detail-score.fail { color: var(--fail); }
+    .detail-score.skip { color: var(--muted); }
+    .detail-subscores {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .detail-subscores span {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      color: var(--muted);
+    }
+    .detail-reason {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      color: var(--text);
+      line-height: 1.5;
+      font-style: italic;
+      opacity: 0.8;
+    }
+    .detail-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 4px 0;
+    }
+
+    /* Tech detail rows */
+    .detail-tech { display: flex; flex-direction: column; gap: 6px; }
+    .detail-tech-row {
+      display: grid;
+      grid-template-columns: 20px 90px 1fr;
+      align-items: center;
+      gap: 8px;
+    }
+    .detail-tech-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      color: var(--muted);
+    }
+    .detail-tech-info {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+    }
+    .detail-tech-info.pass { color: var(--pass); }
+    .detail-tech-info.fail { color: var(--fail); }
+    .detail-tech-info.skip { color: var(--muted); }
+    .detail-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 10px 16px 14px;
+      border-top: 1px solid var(--border);
+      margin-top: 4px;
+    }
+    .live-note {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 0.3px;
+    }
+    .live-btn {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.8px;
+      background: transparent;
+      color: var(--accent2);
+      border: 1px solid var(--accent2);
+      padding: 5px 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .live-btn:hover:not(:disabled) { background: var(--accent2); color: #000; }
+    .live-btn:disabled { opacity: 0.5; cursor: default; border-color: var(--muted); color: var(--muted); }
+    .feed-status {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.8px;
+    }
+    .feed-status.pass { color: var(--pass); }
+    .feed-status.fail { color: var(--fail); }
+
+    /* Name group: icon name + meta sub-line */
+    .feed-name-group { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .feed-name { color: var(--text); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .feed-meta { color: var(--muted); font-size: 9px; letter-spacing: 0.2px; }
+
+    /* Quality badges: Concept + Visual */
+    .feed-quality { display: flex; gap: 5px; }
+    .fq-badge {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.4px;
+      padding: 3px 7px;
+      border-radius: 3px;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    .fq-badge.pass {
+      color: var(--accent2);
+      background: rgba(96,232,200,0.08);
+      border-color: rgba(96,232,200,0.25);
+    }
+    .fq-badge.fail {
+      color: var(--fail);
+      background: rgba(248,113,113,0.08);
+      border-color: rgba(248,113,113,0.25);
+    }
+    .fq-badge.skip {
+      color: var(--muted);
+      background: transparent;
+      border-color: var(--border);
+    }
+
+    /* Tech check chips: S P B C T */
+    .feed-tech { display: flex; gap: 3px; }
+    .ft-chip {
+      font-family: 'DM Mono', monospace;
+      font-size: 8px;
+      font-weight: 500;
+      width: 16px; height: 16px;
+      border-radius: 2px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: default;
+    }
+    .ft-chip.pass { background: rgba(74,222,128,0.15); color: var(--pass); }
+    .ft-chip.fail { background: rgba(248,113,113,0.15); color: var(--fail); }
+    .ft-chip.skip { background: var(--surface2); color: var(--muted); }
+
+    .feed-empty {
+      text-align: center;
+      padding: 64px 0;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .feed-empty-glyph {
+      font-size: 32px;
+      color: var(--border);
+      margin-bottom: 12px;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar { display: flex; flex-direction: column; gap: 24px; }
+
+    /* ── Summary Card ── */
+    .summary-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 20px;
+    }
+    .summary-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 18px;
+    }
+    .summary-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+    .summary-score {
+      font-family: 'Playfair Display', serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .summary-score.good { color: var(--pass); }
+    .summary-score.ok { color: var(--accent); }
+    .summary-score.bad { color: var(--fail); }
+
+    .metric-row {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .metric-item {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .metric-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .metric-name {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.3px;
+    }
+    .metric-pct {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--text);
+    }
+    .metric-bar-track {
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .metric-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      background: var(--pass);
+      transition: width 0.6s ease;
+      width: 0%;
+    }
+    .metric-bar-fill.mid { background: var(--accent); }
+    .metric-bar-fill.low { background: var(--fail); }
+
+    /* Quality metric emphasis */
+    .metric-item.primary .metric-bar-track { height: 5px; }
+    .metric-item.primary .metric-name { color: var(--accent2); }
+    .metric-item.primary .metric-pct { color: var(--accent2); font-size: 11px; }
+    .metric-bar-fill.quality { background: var(--accent2); }
+    .metric-bar-fill.quality.mid { background: var(--accent); }
+    .metric-bar-fill.quality.low { background: var(--fail); }
+    .metric-section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border-top: 1px solid var(--border);
+      padding-top: 10px;
+      margin-top: 4px;
+    }
+    .metric-type-badge {
+      font-family: 'DM Mono', monospace;
+      font-size: 8px;
+      padding: 1px 5px;
+      border-radius: 2px;
+      letter-spacing: 0.5px;
+    }
+    .metric-type-badge.det {
+      background: rgba(96,232,200,0.12);
+      color: var(--accent2);
+    }
+    .metric-type-badge.llm {
+      background: rgba(192,132,252,0.12);
+      color: var(--gen);
+    }
+
+    /* ── History Card ── */
+    .history-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 20px;
+    }
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .history-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      transition: border-color 0.15s;
+      cursor: pointer;
+    }
+    .history-item:hover { border-color: var(--accent2); }
+    .history-item.active { border-color: var(--accent2); background: rgba(96,232,200,0.05); }
+    .history-item-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .history-ts {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+    }
+    .history-score {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .history-score.good { color: var(--pass); }
+    .history-score.ok { color: var(--accent); }
+    .history-score.bad { color: var(--fail); }
+    .history-mode {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      padding: 1px 5px;
+      border-radius: 2px;
+    }
+    .history-mode.dry {
+      background: rgba(96,232,200,0.12);
+      color: var(--accent2);
+    }
+    .history-mode.live {
+      background: rgba(192,132,252,0.12);
+      color: var(--gen);
+    }
+    .history-empty {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 12px;
+      line-height: 1.5;
+    }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      padding: 10px 20px;
+      color: var(--text);
+      opacity: 0;
+      transition: all 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 900px) {
+      header { padding: 0 20px; }
+      .hero, .run-panel, .progress-bar-wrap { padding-left: 20px; padding-right: 20px; }
+      .main { padding: 24px 20px; grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <a class="logo" href="/">GLYPH<span>.</span></a>
+    <div class="header-right">
+      <span class="badge">EVALS</span>
+      <a class="nav-btn" href="/">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        LIBRARY
+      </a>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-tag">Generator Quality</div>
+    <h1>Eval<em>uation</em><br>Dashboard</h1>
+    <p class="hero-sub">Quality checks for the AI icon generator. Each run scores every icon on <strong style="color:var(--accent2)">concept match</strong> and <strong style="color:var(--accent2)">visual quality</strong> — the two metrics that matter most — plus 5 technical checks.</p>
+  </section>
+
+  <!-- Metrics Explainer -->
+  <div class="explainer">
+    <button class="explainer-toggle" id="explainer-toggle" onclick="toggleExplainer()" aria-expanded="false">
+      <span class="explainer-toggle-label">How Icons Are Scored — 7 Metrics</span>
+      <span class="explainer-chevron">▼</span>
+    </button>
+    <div class="explainer-body" id="explainer-body">
+      <p class="explainer-intro">Each icon in the Glyph library is evaluated against 7 quality metrics. The first 4 are <strong style="color:var(--accent2)">deterministic</strong> — instant, free, rule-based checks. The last 3 use an <strong style="color:var(--gen)">LLM judge</strong> (Claude Haiku) to assess visual and semantic quality. Dry Run skips LLM metrics; Live mode runs all 7.</p>
+
+      <div class="metrics-grid">
+
+        <div class="metric-card">
+          <div class="metric-card-top">
+            <span class="metric-card-name">Structural</span>
+            <span class="type-chip det">DETERMINISTIC</span>
+          </div>
+          <p class="metric-card-desc">Validates that the icon data is parseable JSON with a non-empty <code style="color:var(--accent2)">path</code> string and a <code style="color:var(--accent2)">tags</code> array of strings. The foundation — everything else depends on this passing.</p>
+          <div class="metric-card-pass">Pass: <strong>path exists + tags is string array</strong></div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-card-top">
+            <span class="metric-card-name">SVG Syntax</span>
+            <span class="type-chip det">DETERMINISTIC</span>
+          </div>
+          <p class="metric-card-desc">Tokenizes the SVG <code style="color:var(--accent2)">d</code> attribute and checks that only recognized path commands are used (M L H V C S Q T A Z and their lowercase variants), and that the path starts with M or m.</p>
+          <div class="metric-card-pass">Pass: <strong>zero unknown commands</strong></div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-card-top">
+            <span class="metric-card-name">Bounds 2–22</span>
+            <span class="type-chip det">DETERMINISTIC</span>
+          </div>
+          <p class="metric-card-desc">Checks that all <em>absolute</em> coordinates (uppercase commands: M L H V C S Q T A) stay within [2, 22]. Relative coordinates (lowercase l, h, v, c…) are legitimately negative or large and are skipped.</p>
+          <div class="metric-card-pass">Pass: <strong>zero absolute coordinates outside [2, 22]</strong></div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-card-top">
+            <span class="metric-card-name">Complexity</span>
+            <span class="type-chip det">DETERMINISTIC</span>
+          </div>
+          <p class="metric-card-desc">Counts the total number of path commands. Too few (under 3) suggests a degenerate or empty icon. Too many (over 50) produces an icon that's too dense to be legible at 16px — the typical minimum render size.</p>
+          <div class="metric-card-pass">Pass: <strong>3 ≤ commands ≤ 50</strong></div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-card-top">
+            <span class="metric-card-name">Semantic</span>
+            <span class="type-chip llm">LLM JUDGE</span>
+          </div>
+          <p class="metric-card-desc">A Claude Haiku judge evaluates whether the SVG path represents a recognizable, conceptually appropriate icon for its name. Scores 0–5; icons scoring below 3 fail.</p>
+          <div class="metric-card-pass" style="margin-bottom:0">Pass: <strong>score ≥ 3 / 5</strong></div>
+          <div class="prompt-block">
+            <button class="prompt-toggle" onclick="togglePrompt(this)"><span class="prompt-chevron">▶</span> View judge prompt</button>
+            <pre class="prompt-text">You are an expert icon design critic evaluating a generated SVG icon path.
+
+ICON CONTEXT:
+- Name: <span class="prompt-highlight">"{name}"</span>
+- Category: <span class="prompt-highlight">"{category}"</span>
+- Style: <span class="prompt-highlight">"{style}"</span>
+- SVG path d attribute: <span class="prompt-highlight">"{pathD}"</span>
+
+TASK: Evaluate whether this path represents a recognizable, conceptually
+appropriate icon for "{name}". Would a designer recognize this as an
+attempt at "{name}"? Do NOT penalize valid geometric representations —
+simple concepts can have simple paths.
+
+Respond with ONLY this JSON (no markdown):
+{"pass": true|false, "score": 0-5, "reason": "&lt;one sentence&gt;"}
+
+Score: 5=perfect match, 4=good, 3=recognizable, 2=weak,
+1=unrelated, 0=wrong/empty. Pass threshold: score ≥ 3.</pre>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-card-top">
+            <span class="metric-card-name">Design</span>
+            <span class="type-chip llm">LLM JUDGE</span>
+          </div>
+          <p class="metric-card-desc">Evaluates visual quality across four sub-dimensions: representation, guideline compliance (stroke-only, geometric, minimal control points), aesthetics (balance, optical centering, legibility at 16px), and overall polish.</p>
+          <div class="metric-card-pass" style="margin-bottom:0">Pass: <strong>overall score ≥ 3 / 5</strong></div>
+          <div class="prompt-block">
+            <button class="prompt-toggle" onclick="togglePrompt(this)"><span class="prompt-chevron">▶</span> View judge prompt</button>
+            <pre class="prompt-text">You are a senior icon designer reviewing an SVG icon path for visual
+quality and design guideline compliance. The icon should match the
+style of Lucide, Feather, or Heroicons.
+
+ICON CONTEXT:
+- Name: <span class="prompt-highlight">"{name}"</span>
+- Category: <span class="prompt-highlight">"{category}"</span>
+- Style: <span class="prompt-highlight">"{style}"</span>
+- SVG path d attribute: <span class="prompt-highlight">"{pathD}"</span>
+
+EVALUATE on four dimensions:
+1. Representation — Does it visually represent "{name}"?
+2. Guidelines — Stroke-only, geometric, minimal control points,
+   appropriate complexity, coordinates within 24×24 viewBox.
+3. Aesthetics — Balanced weight, optically centered, clean. Legible at 16px?
+4. Polish — Professional icon or rough draft?
+
+Respond with ONLY this JSON (no markdown):
+{"pass": true|false, "score": 0-5,
+ "subscores": {"representation": 0-5, "guidelines": 0-5,
+               "aesthetics": 0-5, "polish": 0-5},
+ "reason": "&lt;one sentence&gt;"}
+
+Score: 5=production-ready, 4=good, 3=acceptable,
+2=needs work, 1=poor, 0=unusable. Pass threshold: score ≥ 3.</pre>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-card-top">
+            <span class="metric-card-name">Tags</span>
+            <span class="type-chip llm">LLM JUDGE</span>
+          </div>
+          <p class="metric-card-desc">Evaluates whether the icon's tags are accurate, relevant, and useful for search. Checks that tags include the core concept, useful synonyms, and related terms — and flags any that are misleading or off-topic.</p>
+          <div class="metric-card-pass" style="margin-bottom:0">Pass: <strong>score ≥ 3 / 5</strong></div>
+          <div class="prompt-block">
+            <button class="prompt-toggle" onclick="togglePrompt(this)"><span class="prompt-chevron">▶</span> View judge prompt</button>
+            <pre class="prompt-text">You are evaluating auto-generated search tags for an SVG icon.
+
+ICON CONTEXT:
+- Name: <span class="prompt-highlight">"{name}"</span>
+- Category: <span class="prompt-highlight">"{category}"</span>
+- Tags: <span class="prompt-highlight">{tags}</span>
+
+TASK: Are these tags accurate, relevant, and useful for searching
+for this icon? Do they include the concept, synonyms, or related
+terms a user would search for? Are any tags misleading or off-topic?
+
+Respond with ONLY this JSON (no markdown):
+{"pass": true|false, "score": 0-5,
+ "reason": "&lt;one sentence&gt;", "badTags": []}
+
+Score: 5=excellent utility, 4=good, 3=acceptable,
+2=weak/generic, 1=mostly wrong, 0=all wrong.
+Pass threshold: score ≥ 3. badTags lists any clearly wrong tags.</pre>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Run Controls -->
+  <div class="run-panel">
+    <button class="run-btn" id="run-btn" onclick="runEvals()">
+      <svg id="run-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polygon points="5 3 19 12 5 21 5 3"/>
+      </svg>
+      <span id="run-label">RUN TECH CHECKS</span>
+    </button>
+    <div class="run-meta" id="run-meta">
+      <strong id="case-count">—</strong> icons
+    </div>
+    <button class="nav-btn" id="refresh-btn" onclick="refreshIcons()" title="Reload icons and latest scores">↻ REFRESH</button>
+  </div>
+
+  <!-- Progress Bar -->
+  <div class="progress-bar-wrap" id="progress-wrap">
+    <div class="progress-label">
+      <span id="progress-text">Running...</span>
+      <span id="progress-count">0 / 26</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main">
+
+    <!-- Case Feed -->
+    <div class="feed-section">
+      <div class="section-title">CASE RESULTS</div>
+      <div class="feed" id="feed">
+        <div class="feed-empty" id="feed-empty">
+          <div class="feed-empty-glyph">◈</div>
+          Press <strong style="color:var(--text)">RUN EVALS</strong> to start
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+
+      <!-- Summary Card -->
+      <div class="summary-card">
+        <div class="summary-header">
+          <span class="summary-label" id="summary-label">QUALITY SCORE</span>
+          <span class="summary-score" id="summary-score">—</span>
+        </div>
+        <div class="metric-row" id="metric-rows">
+          <!-- Injected by JS -->
+        </div>
+      </div>
+
+      <!-- History Card -->
+      <div class="history-card">
+        <div class="summary-label">PAST RUNS</div>
+        <div class="history-list" id="history-list">
+          <div class="history-empty" id="history-empty">Loading history...</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ── State ──
+    let running = false;
+    let liveRunning = new Set(); // caseIds currently being live-scored
+    let total = 0;
+    let completed = 0;
+    let passed = 0;
+    const resultCache = new Map(); // caseId → full result object
+
+    const METRICS = [
+      { name: 'semantic',   label: 'Concept Match', type: 'llm', primary: true },
+      { name: 'design',     label: 'Visual Quality', type: 'llm', primary: true },
+      { name: 'structural', label: 'Structural',    type: 'det' },
+      { name: 'svg-path',   label: 'SVG Syntax',    type: 'det' },
+      { name: 'bounds',     label: 'Bounds 2–22',   type: 'det' },
+      { name: 'complexity', label: 'Complexity',    type: 'det' },
+      { name: 'tags',       label: 'Tags',          type: 'llm' },
+    ];
+
+    // Per-metric running tallies
+    const metricState = {};
+    for (const m of METRICS) metricState[m.name] = { passed: 0, total: 0, skipped: 0 };
+
+    // ── Init ──
+    renderMetricRows();
+    loadHistory();
+    loadIconCount();
+    loadScores();
+
+    // ── Explainer toggle ──
+    function toggleExplainer() {
+      const toggle = document.getElementById('explainer-toggle');
+      const body = document.getElementById('explainer-body');
+      const open = body.classList.toggle('open');
+      toggle.classList.toggle('open', open);
+      toggle.setAttribute('aria-expanded', open);
+    }
+
+    // ── Prompt toggle ──
+    function togglePrompt(btn) {
+      const pre = btn.nextElementSibling;
+      const open = pre.classList.toggle('open');
+      btn.classList.toggle('open', open);
+    }
+
+    async function loadIconCount() {
+      try {
+        const res = await fetch('/api/icons');
+        if (!res.ok) return;
+        const data = await res.json();
+        const count = data.icons?.length ?? data.length ?? '—';
+        document.getElementById('case-count').textContent = count;
+        total = count;
+      } catch {}
+    }
+
+    async function refreshIcons() {
+      if (running) return;
+      const btn = document.getElementById('refresh-btn');
+      btn.disabled = true;
+      btn.textContent = '↻ …';
+      await Promise.all([loadIconCount(), loadScores()]);
+      btn.disabled = false;
+      btn.textContent = '↻ REFRESH';
+    }
+
+// ── Render metric sidebar rows ──
+    function renderMetricRows(summary) {
+      const container = document.getElementById('metric-rows');
+      let html = '';
+      let techDividerAdded = false;
+      for (const m of METRICS) {
+        if (!m.primary && !techDividerAdded) {
+          html += `<div class="metric-section-label">Technical Checks</div>`;
+          techDividerAdded = true;
+        }
+        const s = summary ? summary[m.name] : metricState[m.name];
+        const pct = s && s.total > 0 ? Math.round((s.passed / s.total) * 100) : null;
+        const qualityFill = m.primary ? 'quality ' : '';
+        const barClass = qualityFill + (pct === null ? '' : pct >= 90 ? '' : pct >= 70 ? 'mid' : 'low');
+        html += `
+          <div class="metric-item${m.primary ? ' primary' : ''}">
+            <div class="metric-label-row">
+              <span class="metric-name">${m.label} <span class="metric-type-badge ${m.type}">${m.type === 'det' ? 'DET' : 'LLM'}</span></span>
+              <span class="metric-pct">${pct !== null ? pct + '%' : '—'}</span>
+            </div>
+            <div class="metric-bar-track">
+              <div class="metric-bar-fill ${barClass}" id="bar-${m.name}" style="width:${pct !== null ? pct : 0}%"></div>
+            </div>
+          </div>`;
+      }
+      container.innerHTML = html;
+    }
+
+    function updateMetricBar(metricName, passed, total) {
+      const bar = document.getElementById('bar-' + metricName);
+      const row = bar?.closest('.metric-item');
+      if (!bar || !row) return;
+      const pct = total > 0 ? Math.round((passed / total) * 100) : 0;
+      bar.style.width = pct + '%';
+      const isPrimary = row.classList.contains('primary');
+      const qualityFill = isPrimary ? 'quality ' : '';
+      bar.className = 'metric-bar-fill ' + qualityFill + (pct >= 90 ? '' : pct >= 70 ? 'mid' : 'low');
+      row.querySelector('.metric-pct').textContent = pct + '%';
+    }
+
+    // ── Run Evals ──
+    function runEvals() {
+      if (running) return;
+      running = true;
+      completed = 0;
+      passed = 0;
+      resultCache.clear();
+      for (const m of METRICS) metricState[m.name] = { passed: 0, total: 0, skipped: 0 };
+
+      // Reset UI (feed will be cleared + pre-filled by preFillFeed on 'start' event)
+      document.getElementById('feed').innerHTML = '';
+      document.getElementById('feed-empty')?.remove();
+      document.getElementById('feed').scrollTop = 0;
+      document.getElementById('summary-score').textContent = '—';
+      document.getElementById('summary-score').className = 'summary-score';
+      renderMetricRows();
+
+      const runBtn = document.getElementById('run-btn');
+      runBtn.disabled = true;
+      runBtn.classList.add('running');
+      document.getElementById('run-label').textContent = 'CHECKING…';
+      document.getElementById('run-icon').innerHTML = '<circle cx="12" cy="12" r="3" fill="currentColor"/>';
+
+      document.getElementById('progress-wrap').classList.add('visible');
+      document.getElementById('progress-fill').style.width = '0%';
+      document.getElementById('progress-count').textContent = `0 / …`;
+      document.getElementById('progress-text').textContent = 'Running…';
+
+      // Tech checks only — always dry
+      const body = JSON.stringify({ dryRun: true });
+      fetch('/api/evals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body })
+        .then(res => {
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+
+          function pump() {
+            return reader.read().then(({ done, value }) => {
+              if (done) { onRunComplete(); return; }
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split('\n');
+              buffer = lines.pop();
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  try { handleEvent(JSON.parse(line.slice(6))); } catch {}
+                }
+              }
+              return pump();
+            });
+          }
+          return pump();
+        })
+        .catch(err => {
+          showToast('Error: ' + err.message);
+          onRunComplete();
+        });
+    }
+
+    // ── Build HTML for a single case row (used by live stream + history replay) ──
+    function buildCaseRowHTML(ev) {
+      const QUALITY_METRICS = [
+        { name: 'semantic', shortLabel: 'CONCEPT', fullLabel: 'Concept Match' },
+        { name: 'design',   shortLabel: 'VISUAL',  fullLabel: 'Visual Quality' },
+      ];
+      const qualityBadges = QUALITY_METRICS.map(qm => {
+        const r = (ev.metrics || []).find(x => x.metric === qm.name);
+        const skipped = !r || r.details?.skipped;
+        const passing = r?.pass && !skipped;
+        const cls = skipped ? 'skip' : passing ? 'pass' : 'fail';
+        const icon = skipped ? '–' : passing ? '✓' : '✗';
+        return `<span class="fq-badge ${cls}" title="${qm.fullLabel}: ${skipped ? 'skipped' : passing ? 'pass' : 'fail'}">${icon} ${qm.shortLabel}</span>`;
+      }).join('');
+
+      const TECH_METRICS = [
+        { name: 'structural', letter: 'S', label: 'Structural' },
+        { name: 'svg-path',   letter: 'P', label: 'SVG Syntax' },
+        { name: 'bounds',     letter: 'B', label: 'Bounds 2–22' },
+        { name: 'complexity', letter: 'C', label: 'Complexity' },
+        { name: 'tags',       letter: 'T', label: 'Tags' },
+      ];
+      const techChips = TECH_METRICS.map(tm => {
+        const r = (ev.metrics || []).find(x => x.metric === tm.name);
+        const skipped = !r || r.details?.skipped;
+        const passing = r?.pass && !skipped;
+        const cls = skipped ? 'skip' : passing ? 'pass' : 'fail';
+        return `<span class="ft-chip ${cls}" title="${tm.label}: ${skipped ? 'skipped' : passing ? 'pass' : 'fail'}">${tm.letter}</span>`;
+      }).join('');
+
+      const name = ev.testCase?.name ?? ev.caseId;
+      const meta = [ev.caseId, ev.testCase?.style].filter(Boolean).join(' · ');
+      return `
+        <span class="feed-status ${ev.overallPass ? 'pass' : 'fail'}">${ev.overallPass ? 'PASS' : 'FAIL'}</span>
+        <div class="feed-name-group">
+          <span class="feed-name">${name}</span>
+          <span class="feed-meta">${meta}</span>
+        </div>
+        <div class="feed-quality">${qualityBadges}</div>
+        <div class="feed-tech">${techChips}</div>
+        <span class="feed-chevron">▶</span>`;
+    }
+
+    // ── Build the expanded detail panel HTML for a case result ──
+    function buildDetailHTML(result) {
+      const metrics = result.metrics || [];
+
+      const QUALITY_DEFS = [
+        { name: 'semantic', label: 'CONCEPT MATCH' },
+        { name: 'design',   label: 'VISUAL QUALITY' },
+      ];
+      const qualityHTML = QUALITY_DEFS.map((qd, i) => {
+        const m = metrics.find(x => x.metric === qd.name);
+        const skipped = !m || m.details?.skipped;
+        if (skipped) {
+          return `${i > 0 ? '<hr class="detail-divider">' : ''}
+            <div class="detail-metric">
+              <div class="detail-metric-header">
+                <span class="detail-metric-name">${qd.label}</span>
+                <span class="detail-score skip">SKIPPED</span>
+              </div>
+              <p class="detail-reason" style="font-style:normal;opacity:0.5">Run in LIVE mode to get LLM scores.</p>
+            </div>`;
+        }
+        const score = m.details?.score ?? '?';
+        const reason = m.details?.reason ?? '';
+        const cls = m.pass ? 'pass' : 'fail';
+        let subscoresHTML = '';
+        if (m.details?.subscores) {
+          const ss = m.details.subscores;
+          subscoresHTML = `<div class="detail-subscores">
+            <span title="Representation">Rep ${ss.representation ?? '?'}</span>
+            <span title="Guidelines">Guide ${ss.guidelines ?? '?'}</span>
+            <span title="Aesthetics">Aes ${ss.aesthetics ?? '?'}</span>
+            <span title="Polish">Polish ${ss.polish ?? '?'}</span>
+          </div>`;
+        }
+        return `${i > 0 ? '<hr class="detail-divider">' : ''}
+          <div class="detail-metric">
+            <div class="detail-metric-header">
+              <span class="detail-metric-name">${qd.label}</span>
+              <span class="detail-score ${cls}">${score}/5</span>
+            </div>
+            ${subscoresHTML}
+            ${reason ? `<p class="detail-reason">"${reason}"</p>` : ''}
+          </div>`;
+      }).join('');
+
+      const TECH_DEFS = [
+        { name: 'structural', letter: 'S', label: 'Structural',
+          detail: d => d?.checkedFields ? `${d.checkedFields} fields` : 'JSON + fields valid' },
+        { name: 'svg-path',   letter: 'P', label: 'SVG Syntax',
+          detail: d => d?.commandCount != null ? `${d.commandCount} commands` : '' },
+        { name: 'bounds',     letter: 'B', label: 'Bounds 2–22',
+          detail: d => {
+            if (!d) return '';
+            if (d.violationCount > 0) return `${d.violationCount} violation${d.violationCount > 1 ? 's' : ''}: ${(d.violations || []).slice(0, 5).join(', ')}`;
+            return `${d.checkedCoordinates ?? '?'} coords OK`;
+          }},
+        { name: 'complexity', letter: 'C', label: 'Complexity',
+          detail: d => d?.commandCount != null ? `${d.commandCount} commands` : '' },
+        { name: 'tags',       letter: 'T', label: 'Tags',
+          detail: d => {
+            if (!d || d.skipped) return 'skipped';
+            return [d.score != null ? `${d.score}/5` : '', d.reason].filter(Boolean).join(' · ');
+          }},
+      ];
+      const techHTML = TECH_DEFS.map(td => {
+        const m = metrics.find(x => x.metric === td.name);
+        const skipped = !m || m.details?.skipped;
+        const passing = m?.pass && !skipped;
+        const cls = skipped ? 'skip' : passing ? 'pass' : 'fail';
+        const info = skipped ? 'skipped' : (td.detail(m?.details) || (passing ? 'pass' : 'fail'));
+        return `<div class="detail-tech-row">
+          <span class="ft-chip ${cls}">${td.letter}</span>
+          <span class="detail-tech-label">${td.label}</span>
+          <span class="detail-tech-info ${cls}">${info}</span>
+        </div>`;
+      }).join('');
+
+      const sem = result.metrics?.find(m => m.metric === 'semantic');
+      const hasLiveScore = sem && !sem.details?.skipped;
+      const liveBtnLabel = hasLiveScore ? '↻ RE-SCORE' : '▶ RUN LIVE';
+      const liveNote = hasLiveScore ? '' : '<span class="live-note">Gets concept &amp; visual scores from Claude</span>';
+
+      return `<div class="detail-grid">
+        <div class="detail-quality">${qualityHTML}</div>
+        <div class="detail-tech">${techHTML}</div>
+      </div>
+      <div class="detail-actions">
+        ${liveNote}
+        <button class="live-btn" id="live-btn-${result.caseId}" onclick="runLiveForIcon('${result.caseId}')">${liveBtnLabel}</button>
+      </div>`;
+    }
+
+    // ── Toggle expand/collapse for a case row ──
+    function toggleDetail(caseId) {
+      const caseEl = document.getElementById('case-' + caseId);
+      if (!caseEl) return;
+      const detailEl = caseEl.querySelector('.feed-detail');
+      const isOpen = caseEl.classList.toggle('open');
+      if (isOpen && !detailEl.innerHTML) {
+        const result = resultCache.get(caseId);
+        if (result) detailEl.innerHTML = buildDetailHTML(result);
+      }
+    }
+
+    // ── Append one case result row to the feed (shared by live stream + history replay) ──
+    function appendCaseToFeed(result, feed) {
+      resultCache.set(result.caseId, result);
+      const caseEl = document.createElement('div');
+      caseEl.className = 'feed-case';
+      caseEl.id = 'case-' + result.caseId;
+
+      const item = document.createElement('div');
+      item.className = `feed-item ${result.overallPass ? 'pass' : 'fail'}`;
+      item.innerHTML = buildCaseRowHTML(result);
+      item.onclick = () => toggleDetail(result.caseId);
+
+      const detailEl = document.createElement('div');
+      detailEl.className = 'feed-detail';
+
+      caseEl.appendChild(item);
+      caseEl.appendChild(detailEl);
+      feed.appendChild(caseEl);
+    }
+
+    // ── Pre-fill feed with all icons as pending rows before a run ──
+    function preFillFeed(allIcons, feed) {
+      resultCache.clear();
+      feed.innerHTML = '';
+      const pendingChips = '<span class="ft-chip skip">S</span><span class="ft-chip skip">P</span><span class="ft-chip skip">B</span><span class="ft-chip skip">C</span><span class="ft-chip skip">T</span>';
+      const pendingBadges = '<span class="fq-badge skip">– CONCEPT</span><span class="fq-badge skip">– VISUAL</span>';
+      for (const icon of allIcons) {
+        const caseEl = document.createElement('div');
+        caseEl.className = 'feed-case pending';
+        caseEl.id = 'case-' + icon.id;
+
+        const item = document.createElement('div');
+        item.className = 'feed-item pending';
+        item.innerHTML = `
+          <span class="feed-status pending">–</span>
+          <div class="feed-name-group">
+            <span class="feed-name">${icon.name}</span>
+            <span class="feed-meta">${icon.id} · outline</span>
+          </div>
+          <div class="feed-quality">${pendingBadges}</div>
+          <div class="feed-tech">${pendingChips}</div>
+          <span class="feed-chevron" style="visibility:hidden">▶</span>`;
+
+        const detailEl = document.createElement('div');
+        detailEl.className = 'feed-detail';
+
+        caseEl.appendChild(item);
+        caseEl.appendChild(detailEl);
+        feed.appendChild(caseEl);
+      }
+    }
+
+    // ── Update an existing pending row in-place with a real result ──
+    function updateCaseRow(caseEl, result) {
+      resultCache.set(result.caseId, result);
+      caseEl.classList.remove('pending');
+
+      const item = caseEl.querySelector('.feed-item');
+      item.className = `feed-item ${result.overallPass ? 'pass' : 'fail'}`;
+      item.innerHTML = buildCaseRowHTML(result);
+      item.onclick = () => toggleDetail(result.caseId);
+
+      // Reset any open detail panel
+      const detailEl = caseEl.querySelector('.feed-detail');
+      if (detailEl) detailEl.innerHTML = '';
+      caseEl.classList.remove('open');
+    }
+
+    // ── Load a specific past run by ID and replay into feed ──
+    async function loadRun(id) {
+      if (running) return;
+      try {
+        const res = await fetch(`/api/evals?id=${encodeURIComponent(id)}`);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const { run } = await res.json();
+        if (!run?.results?.length) { showToast('No case results stored for this run.'); return; }
+
+        // Mark active history card
+        document.querySelectorAll('.history-item').forEach(el => el.classList.remove('active'));
+        document.querySelector(`.history-item[data-id="${id}"]`)?.classList.add('active');
+
+        // Clear feed + reset sidebar tallies + clear result cache
+        const feed = document.getElementById('feed');
+        document.getElementById('feed-empty')?.remove();
+        feed.innerHTML = '';
+        resultCache.clear();
+        for (const m of METRICS) metricState[m.name] = { passed: 0, total: 0, skipped: 0 };
+
+        // Replay each stored result into the feed
+        for (const result of run.results) {
+          appendCaseToFeed(result, feed);
+          for (const m of result.metrics || []) {
+            if (metricState[m.metric]) {
+              metricState[m.metric].total++;
+              if (m.pass) metricState[m.metric].passed++;
+              if (m.details?.skipped) metricState[m.metric].skipped++;
+            }
+          }
+        }
+
+        // Update sidebar from stored summary
+        const summary = run.summary || {};
+        renderMetricRows(Object.keys(summary).length ? summary : undefined);
+
+        const pct = run.total > 0 ? Math.round((run.passed / run.total) * 100) : 0;
+        const scoreEl = document.getElementById('summary-score');
+        scoreEl.textContent = pct + '%';
+        scoreEl.className = 'summary-score ' + (pct >= 90 ? 'good' : pct >= 70 ? 'ok' : 'bad');
+
+        const isDry = run.dry_run ?? false;
+        document.getElementById('summary-label').textContent = isDry ? 'TECH SCORE' : 'QUALITY SCORE';
+
+        // Show progress bar as complete
+        document.getElementById('progress-wrap').classList.add('visible');
+        document.getElementById('progress-fill').style.width = '100%';
+        document.getElementById('progress-count').textContent = `${run.total} / ${run.total}`;
+        const ts = run.timestamp ? new Date(run.timestamp).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'past run';
+        document.getElementById('progress-text').textContent = `Loaded from ${ts}`;
+      } catch (err) {
+        showToast('Could not load run: ' + err.message);
+      }
+    }
+
+    function handleEvent(ev) {
+      if (ev.type === 'start') {
+        total = ev.total;
+        document.getElementById('progress-count').textContent = `0 / ${total}`;
+        if (ev.allIcons?.length) {
+          preFillFeed(ev.allIcons, document.getElementById('feed'));
+        }
+      }
+
+      if (ev.type === 'case') {
+        completed++;
+        if (ev.overallPass) passed++;
+
+        // Update metric tallies
+        for (const m of ev.metrics || []) {
+          if (metricState[m.metric]) {
+            metricState[m.metric].total++;
+            if (m.pass) metricState[m.metric].passed++;
+            if (m.details?.skipped) metricState[m.metric].skipped++;
+            updateMetricBar(m.metric, metricState[m.metric].passed, metricState[m.metric].total);
+          }
+        }
+
+        // Update existing pending row, or append if not pre-filled
+        const feed = document.getElementById('feed');
+        const existingCase = document.getElementById('case-' + ev.caseId);
+        if (existingCase) {
+          updateCaseRow(existingCase, ev);
+          existingCase.scrollIntoView({ block: 'nearest' });
+        } else {
+          appendCaseToFeed(ev, feed);
+          feed.scrollTop = feed.scrollHeight;
+        }
+
+        // Progress
+        const pct = Math.round((completed / total) * 100);
+        document.getElementById('progress-fill').style.width = pct + '%';
+        document.getElementById('progress-count').textContent = `${completed} / ${total}`;
+        document.getElementById('progress-text').textContent = ev.error
+          ? `Error on ${ev.caseId}`
+          : `Running ${ev.caseId}…`;
+
+        // Live overall score
+        const overallPct = Math.round((passed / completed) * 100);
+        const scoreEl = document.getElementById('summary-score');
+        scoreEl.textContent = overallPct + '%';
+        scoreEl.className = 'summary-score ' + (overallPct >= 90 ? 'good' : overallPct >= 70 ? 'ok' : 'bad');
+      }
+
+      if (ev.type === 'done') {
+        document.getElementById('progress-text').textContent = 'Complete';
+        renderMetricRows(ev.summary);
+        const overallPct = ev.total > 0 ? Math.round((ev.passed / ev.total) * 100) : 0;
+        const scoreEl = document.getElementById('summary-score');
+        scoreEl.textContent = overallPct + '%';
+        scoreEl.className = 'summary-score ' + (overallPct >= 90 ? 'good' : overallPct >= 70 ? 'ok' : 'bad');
+        showToast(`Done — ${ev.passed}/${ev.total} passed (${overallPct}%)`);
+        loadHistory();
+        loadScores(); // refresh feed + sidebar with updated all-time scores
+      }
+
+      if (ev.type === 'error') {
+        showToast('Eval error: ' + ev.message);
+      }
+    }
+
+    function onRunComplete() {
+      running = false;
+      const runBtn = document.getElementById('run-btn');
+      runBtn.disabled = false;
+      runBtn.classList.remove('running');
+      document.getElementById('run-label').textContent = 'RUN TECH CHECKS';
+      document.getElementById('run-icon').innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
+    }
+
+    // ── Convert icon_scores row → result object for feed rendering ──
+    function scoreToResult(score, iconMeta) {
+      const toMetric = (col, name) => {
+        if (!col) return { metric: name, pass: false, details: { skipped: true } };
+        return { ...col, metric: name };
+      };
+      const metrics = [
+        toMetric(score.structural, 'structural'),
+        toMetric(score.svg_path, 'svg-path'),
+        toMetric(score.bounds, 'bounds'),
+        toMetric(score.complexity, 'complexity'),
+        toMetric(score.semantic, 'semantic'),
+        toMetric(score.design, 'design'),
+        toMetric(score.tags, 'tags'),
+      ];
+      const sem = metrics.find(m => m.metric === 'semantic');
+      const des = metrics.find(m => m.metric === 'design');
+      const llmAvailable = !sem?.details?.skipped;
+      const overallPass = llmAvailable
+        ? (sem?.pass ?? false) && (des?.pass ?? false)
+        : metrics.filter(m => !m.details?.skipped).every(m => m.pass);
+      return {
+        caseId: score.icon_id,
+        testCase: { name: score.name ?? score.icon_id, category: iconMeta?.category ?? '', style: iconMeta?.style ?? 'outline' },
+        overallPass,
+        metrics,
+      };
+    }
+
+    // ── Append a single icon as a pending (no-score) row to the feed ──
+    function appendPendingIcon(icon, feed) {
+      const caseEl = document.createElement('div');
+      caseEl.className = 'feed-case pending';
+      caseEl.id = 'case-' + icon.id;
+      const item = document.createElement('div');
+      item.className = 'feed-item pending';
+      const pendingChips = '<span class="ft-chip skip">S</span><span class="ft-chip skip">P</span><span class="ft-chip skip">B</span><span class="ft-chip skip">C</span><span class="ft-chip skip">T</span>';
+      const pendingBadges = '<span class="fq-badge skip">– CONCEPT</span><span class="fq-badge skip">– VISUAL</span>';
+      item.innerHTML = `
+        <span class="feed-status pending">–</span>
+        <div class="feed-name-group">
+          <span class="feed-name">${icon.name}</span>
+          <span class="feed-meta">${icon.id}</span>
+        </div>
+        <div class="feed-quality">${pendingBadges}</div>
+        <div class="feed-tech">${pendingChips}</div>
+        <span class="feed-chevron" style="visibility:hidden">▶</span>`;
+      const detailEl = document.createElement('div');
+      detailEl.className = 'feed-detail';
+      caseEl.appendChild(item);
+      caseEl.appendChild(detailEl);
+      feed.appendChild(caseEl);
+    }
+
+    // ── Run a live eval for a single icon ──
+    async function runLiveForIcon(iconId) {
+      if (running || liveRunning.has(iconId)) return;
+      liveRunning.add(iconId);
+
+      const btn = document.getElementById('live-btn-' + iconId);
+      if (btn) { btn.disabled = true; btn.textContent = '● SCORING…'; }
+
+      try {
+        const body = JSON.stringify({ dryRun: false, iconId });
+        const res = await fetch('/api/evals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        const pump = () => reader.read().then(({ done, value }) => {
+          if (done) return;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop();
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            try {
+              const ev = JSON.parse(line.slice(6));
+              if (ev.type === 'case') {
+                const caseEl = document.getElementById('case-' + ev.caseId);
+                const wasOpen = caseEl?.classList.contains('open');
+                if (caseEl) updateCaseRow(caseEl, ev);
+                // Re-open and re-render detail with fresh scores
+                if (wasOpen && caseEl) {
+                  caseEl.classList.add('open');
+                  const detailEl = caseEl.querySelector('.feed-detail');
+                  if (detailEl) detailEl.innerHTML = buildDetailHTML(ev);
+                }
+              }
+              if (ev.type === 'done') {
+                showToast(`Live scored: ${ev.passed ? 'PASS' : 'FAIL'}`);
+                loadScores({ updateSidebarOnly: true });
+              }
+              if (ev.type === 'error') showToast('Error: ' + ev.message);
+            } catch {}
+          }
+          return pump();
+        });
+        await pump();
+      } catch (err) {
+        showToast('Live score error: ' + err.message);
+      } finally {
+        liveRunning.delete(iconId);
+        // Button is now re-rendered inside the updated detail panel — no need to restore it
+      }
+    }
+
+    // ── Load aggregated all-time scores from icon_scores table ──
+    async function loadScores({ updateSidebarOnly = false } = {}) {
+      try {
+        const [scoresRes, iconsRes] = await Promise.all([
+          fetch('/api/evals?view=scores'),
+          fetch('/api/icons'),
+        ]);
+        if (!scoresRes.ok || !iconsRes.ok) return;
+        const [{ scores }, iconsData] = await Promise.all([scoresRes.json(), iconsRes.json()]);
+        const allIcons = iconsData.icons ?? iconsData;
+
+        // Fallback: if icon_scores table is empty, load from the latest past run
+        if (!scores?.length && !updateSidebarOnly) {
+          const runsRes = await fetch('/api/evals');
+          if (runsRes.ok) {
+            const { runs } = await runsRes.json();
+            if (runs?.length) { await loadRun(runs[0].id); return; }
+          }
+        }
+
+        const scoreMap = new Map((scores || []).map(s => [s.icon_id, s]));
+        const scoredResults = (scores || []).map(s => scoreToResult(s, null));
+
+        if (!updateSidebarOnly) {
+          const feed = document.getElementById('feed');
+          feed.innerHTML = '';
+          resultCache.clear();
+          for (const m of METRICS) metricState[m.name] = { passed: 0, total: 0, skipped: 0 };
+
+          for (const icon of allIcons) {
+            const score = scoreMap.get(icon.id);
+            if (score) {
+              const result = scoreToResult(score, icon);
+              appendCaseToFeed(result, feed);
+              for (const metric of result.metrics) {
+                const s = metricState[metric.metric];
+                if (s) { s.total++; if (metric.pass) s.passed++; if (metric.details?.skipped) s.skipped++; }
+              }
+            } else {
+              appendPendingIcon(icon, feed);
+            }
+          }
+
+          const scoredCount = scores?.length ?? 0;
+          document.getElementById('progress-wrap').classList.add('visible');
+          document.getElementById('progress-fill').style.width = scoredCount > 0 ? '100%' : '0%';
+          document.getElementById('progress-count').textContent = `${scoredCount} / ${allIcons.length}`;
+          document.getElementById('progress-text').textContent = scoredCount > 0 ? 'All-time scores' : 'No scores yet — run evals above';
+          renderMetricRows(); // uses metricState updated above
+        } else {
+          // Recompute sidebar from all scores without touching feed
+          const sidebarState = {};
+          for (const m of METRICS) sidebarState[m.name] = { passed: 0, total: 0, skipped: 0 };
+          for (const r of scoredResults) {
+            for (const metric of r.metrics) {
+              const s = sidebarState[metric.metric];
+              if (s) { s.total++; if (metric.pass) s.passed++; if (metric.details?.skipped) s.skipped++; }
+            }
+          }
+          renderMetricRows(sidebarState);
+        }
+
+        // Update overall score from aggregated all-time data
+        if (scores?.length) {
+          const totalPassed = scoredResults.filter(r => r.overallPass).length;
+          const pct = Math.round((totalPassed / scores.length) * 100);
+          const scoreEl = document.getElementById('summary-score');
+          scoreEl.textContent = pct + '%';
+          scoreEl.className = 'summary-score ' + (pct >= 90 ? 'good' : pct >= 70 ? 'ok' : 'bad');
+          const hasLiveScores = scores.some(s => s.last_live_run_at);
+          document.getElementById('summary-label').textContent = hasLiveScores ? 'QUALITY SCORE' : 'TECH SCORE';
+        }
+      } catch (err) {
+        console.error('loadScores error:', err);
+      }
+    }
+
+    // ── History ──
+    async function loadHistory({ autoLoadLatest = false } = {}) {
+      const el = document.getElementById('history-list');
+      try {
+        const res = await fetch('/api/evals');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const { runs } = await res.json();
+
+        if (!runs || runs.length === 0) {
+          el.innerHTML = '<div class="history-empty">No past runs found.<br>Run your first eval above.</div>';
+          return;
+        }
+
+        el.innerHTML = runs.map(r => {
+          const ts = r.timestamp
+            ? new Date(r.timestamp).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+            : r.file?.replace('.json', '').replace('T', ' ').replace(/-dry-run$/, '');
+          const pct = r.total > 0 ? Math.round((r.passed / r.total) * 100) : 0;
+          const scoreClass = pct >= 90 ? 'good' : pct >= 70 ? 'ok' : 'bad';
+          const isDry = r.dry_run ?? r.dryRun ?? false;
+          const modeClass = isDry ? 'dry' : 'live';
+          const modeLabel = isDry ? 'DRY' : 'LIVE';
+          return `
+            <div class="history-item" data-id="${r.id}" onclick="loadRun('${r.id}')">
+              <div class="history-item-top">
+                <span class="history-ts">${ts}</span>
+                <span class="history-score ${scoreClass}">${pct}%</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span class="history-ts">${r.passed ?? '?'}/${r.total ?? '?'} passed</span>
+                <span class="history-mode ${modeClass}">${modeLabel}</span>
+              </div>
+            </div>`;
+        }).join('');
+
+        if (autoLoadLatest && runs[0]?.id) {
+          loadRun(runs[0].id);
+        }
+      } catch {
+        el.innerHTML = '<div class="history-empty">History unavailable.<br>Run evals locally with Supabase configured.</div>';
+      }
+    }
+
+    // ── Toast ──
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3500);
+    }
+  </script>
+
+</body>
+</html>
